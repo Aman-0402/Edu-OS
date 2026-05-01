@@ -19,6 +19,14 @@ import Classes from '@/pages/admin/academics/Classes'
 import Sections from '@/pages/admin/academics/Sections'
 import Subjects from '@/pages/admin/academics/Subjects'
 
+import StudentsList from '@/pages/admin/students/StudentsList'
+import StudentForm from '@/pages/admin/students/StudentForm'
+import StudentDetail from '@/pages/admin/students/StudentDetail'
+
+import TeachersList from '@/pages/admin/teachers/TeachersList'
+import TeacherForm from '@/pages/admin/teachers/TeacherForm'
+import TeacherDetail from '@/pages/admin/teachers/TeacherDetail'
+
 function RootRedirect() {
   const { user, isLoading } = useAuth()
   if (isLoading) return null
@@ -58,6 +66,14 @@ export default function App() {
           <Route path="academics/classes" element={<Classes />} />
           <Route path="academics/sections" element={<Sections />} />
           <Route path="academics/subjects" element={<Subjects />} />
+
+          <Route path="students" element={<StudentsList />} />
+          <Route path="students/new" element={<StudentForm />} />
+          <Route path="students/:id" element={<StudentDetail />} />
+
+          <Route path="teachers" element={<TeachersList />} />
+          <Route path="teachers/new" element={<TeacherForm />} />
+          <Route path="teachers/:id" element={<TeacherDetail />} />
         </Route>
 
         {/* Teacher */}

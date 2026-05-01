@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getStudent, updateStudent, getEnrollments, createEnrollment, deleteEnrollment } from '@/api/students'
@@ -20,18 +20,23 @@ export default function StudentDetail() {
   const { data: student, isLoading } = useQuery({
     queryKey: ['student', id],
     queryFn: () => getStudent(id).then((r) => r.data),
-    onSuccess: (data) => setEditForm({
-      first_name: data.first_name,
-      last_name: data.last_name,
-      phone: data.phone ?? '',
-      date_of_birth: data.date_of_birth ?? '',
-      gender: data.gender ?? '',
-      address: data.address ?? '',
-      blood_group: data.blood_group ?? '',
-      guardian_name: data.guardian_name ?? '',
-      guardian_phone: data.guardian_phone ?? '',
-    }),
   })
+
+  useEffect(() => {
+    if (student) {
+      setEditForm({
+        first_name: student.first_name,
+        last_name: student.last_name,
+        phone: student.phone ?? '',
+        date_of_birth: student.date_of_birth ?? '',
+        gender: student.gender ?? '',
+        address: student.address ?? '',
+        blood_group: student.blood_group ?? '',
+        guardian_name: student.guardian_name ?? '',
+        guardian_phone: student.guardian_phone ?? '',
+      })
+    }
+  }, [student])
 
   const { data: enrollments = [] } = useQuery({
     queryKey: ['enrollments', { student: id }],
@@ -101,13 +106,7 @@ export default function StudentDetail() {
         action={
           <div className="flex gap-2">
             <button
-              onClick={() => { setEditMode(!editMode); setEditForm({
-                first_name: student.first_name, last_name: student.last_name,
-                phone: student.phone ?? '', date_of_birth: student.date_of_birth ?? '',
-                gender: student.gender ?? '', address: student.address ?? '',
-                blood_group: student.blood_group ?? '',
-                guardian_name: student.guardian_name ?? '', guardian_phone: student.guardian_phone ?? '',
-              })}}
+              onClick={() => setEditMode(!editMode)}
               className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200"
             >
               {editMode ? 'Cancel' : 'Edit'}
