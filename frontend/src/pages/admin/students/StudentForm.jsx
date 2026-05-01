@@ -1,0 +1,156 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { createStudent } from '@/api/students'
+import PageHeader from '@/components/ui/PageHeader'
+
+const EMPTY = {
+  email: '', first_name: '', last_name: '', phone: '', password: '',
+  date_of_birth: '', gender: '', address: '',
+  blood_group: '', guardian_name: '', guardian_phone: '',
+}
+
+export default function StudentForm() {
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [form, setForm] = useState(EMPTY)
+  const [errors, setErrors] = useState({})
+
+  const createMut = useMutation({
+    mutationFn: createStudent,
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['students'] })
+      navigate(`/admin/students/${res.data.id}`)
+    },
+    onError: (e) => {
+      const data = e.response?.data
+      if (data && typeof data === 'object') setErrors(data)
+      else setErrors({ non_field_errors: ['Something went wrong.'] })
+    },
+  })
+
+  function set(field, value) {
+    setForm((f) => ({ ...f, [field]: value }))
+    setErrors((e) => { const next = { ...e }; delete next[field]; return next })
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    setErrors({})
+    createMut.mutate(form)
+  }
+
+  const fieldError = (f) => errors[f]?.[0] ?? errors[f]
+
+  return (
+    <div>
+      <PageHeader title="Add New Student" subtitle="Creates a student account and profile" />
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 max-w-2xl space-y-6">
+        {errors.non_field_errors && (
+          <p className="text-sm text-red-600">{errors.non_field_errors[0]}</p>
+        )}
+
+        {/* Account */}
+        <section>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Account</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="First Name" error={fieldError('first_name')}>
+              <input required value={form.first_name} onChange={(e) => set('first_name', e.target.value)}
+                className={input(fieldError('first_name'))} placeholder="Jane" />
+            </Field>
+            <Field label="Last Name" error={fieldError('last_name')}>
+              <input required value={form.last_name} onChange={(e) => set('last_name', e.target.value)}
+                className={input(fieldError('last_name'))} placeholder="Doe" />
+            </Field>
+            <Field label="Email" error={fieldError('email')}>
+              <input required type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
+                className={input(fieldError('email'))} placeholder="jane@school.com" />
+            </Field>
+            <Field label="Phone" error={fieldError('phone')}>
+              <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
+                className={input(fieldError('phone'))} placeholder="+91 9876543210" />
+            </Field>
+            <Field label="Password" error={fieldError('password')} className="col-span-2">
+              <input required type="password" value={form.password} onChange={(e) => set('password', e.target.value)}
+                className={input(fieldError('password'))} placeholder="Min 8 characters" />
+            </Field>
+          </div>
+        </section>
+
+        {/* Profile */}
+        <section>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Profile</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Date of Birth" error={fieldError('date_of_birth')}>
+              <input type="date" value={form.date_of_birth} onChange={(e) => set('date_of_birth', e.target.value)}
+                className={input(fieldError('date_of_birth'))} />
+            </Field>
+            <Field label="Gender" error={fieldError('gender')}>
+              <select value={form.gender} onChange={(e) => set('gender', e.target.value)} className={input(fieldError('gender'))}>
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </Field>
+            <Field label="Blood Group" error={fieldError('blood_group')}>
+              <select value={form.blood_group} onChange={(e) => set('blood_group', e.target.value)} className={input(fieldError('blood_group'))}>
+                <option value="">Select</option>
+                {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Address" error={fieldError('address')} className="col-span-2">
+              <textarea rows={2} value={form.address} onChange={(e) => set('address', e.target.value)}
+                className={input(fieldError('address'))} placeholder="Home address" />
+            </Field>
+          </div>
+        </section>
+
+        {/* Guardian */}
+        <section>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Guardian</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Guardian Name" error={fieldError('guardian_name')}>
+              <input value={form.guardian_name} onChange={(e) => set('guardian_name', e.target.value)}
+                className={input(fieldError('guardian_name'))} placeholder="Parent / Guardian name" />
+            </Field>
+            <Field label="Guardian Phone" error={fieldError('guardian_phone')}>
+              <input value={form.guardian_phone} onChange={(e) => set('guardian_phone', e.target.value)}
+                className={input(fieldError('guardian_phone'))} placeholder="+91 9876543210" />
+            </Field>
+          </div>
+        </section>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={() => navigate('/admin/students')}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+            Cancel
+          </button>
+          <button type="submit" disabled={createMut.isPending}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            {createMut.isPending ? 'Creating...' : 'Create Student'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function Field({ label, error, children, className = '' }) {
+  return (
+    <div className={className}>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      {children}
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+    </div>
+  )
+}
+
+function input(hasError) {
+  return `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+    hasError ? 'border-red-400' : 'border-gray-300'
+  }`
+}
