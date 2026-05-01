@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from utils.permissions import IsAdmin, IsAdminOrTeacher
+from rest_framework.permissions import IsAuthenticated
+from utils.permissions import IsAdmin, IsAdminOrTeacher, IsStudent
 from .models import StudentProfile, Enrollment
 from .serializers import (
     StudentProfileSerializer,
@@ -66,6 +67,33 @@ def student_detail(request, pk):
     profile.save(update_fields=['is_active'])
     profile.user.save(update_fields=['is_active'])
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ── Student self-view ─────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsStudent])
+def student_me(request):
+    try:
+        profile = StudentProfile.objects.select_related('user').get(user=request.user)
+    except StudentProfile.DoesNotExist:
+        return Response({'error': 'Student profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    data = StudentProfileSerializer(profile).data
+
+    # Current active enrollment
+    enrollment = (
+        Enrollment.objects
+        .select_related('section__class_group', 'academic_year')
+        .filter(student=profile, status='active', academic_year__is_current=True)
+        .first()
+    )
+    if enrollment:
+        data['current_enrollment'] = EnrollmentSerializer(enrollment).data
+    else:
+        data['current_enrollment'] = None
+
+    return Response(data)
 
 
 # ── Enrollments ───────────────────────────────────────────────────────────────

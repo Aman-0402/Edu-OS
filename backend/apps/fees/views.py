@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsAdmin
 from .models import FeeCategory, FeeStructure, StudentFee, FeePayment
 from .serializers import (
@@ -139,24 +140,30 @@ def bulk_assign_fees(request):
 # ── Student Fees ───────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([IsAdmin])
+@permission_classes([IsAuthenticated])
 def student_fee_list(request):
     qs = StudentFee.objects.select_related(
         'student__user', 'fee_structure__category',
         'fee_structure__class_group', 'fee_structure__academic_year',
     ).prefetch_related('payments')
 
-    student_id = request.query_params.get('student')
-    year_id = request.query_params.get('academic_year')
-    class_id = request.query_params.get('class_group')
-    fee_status = request.query_params.get('status')
+    # Students can only see their own fees
+    if request.user.role == 'student':
+        from apps.students.models import StudentProfile
+        try:
+            own = StudentProfile.objects.get(user=request.user)
+        except StudentProfile.DoesNotExist:
+            return Response([], status=status.HTTP_200_OK)
+        qs = qs.filter(student=own)
+    else:
+        student_id = request.query_params.get('student')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
 
-    if student_id:
-        qs = qs.filter(student_id=student_id)
+    year_id = request.query_params.get('academic_year')
+    fee_status = request.query_params.get('status')
     if year_id:
         qs = qs.filter(fee_structure__academic_year_id=year_id)
-    if class_id:
-        qs = qs.filter(fee_structure__class_group_id=class_id)
     if fee_status:
         qs = qs.filter(status=fee_status)
 

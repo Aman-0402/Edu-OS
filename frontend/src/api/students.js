@@ -7,6 +7,8 @@ export const getStudent = (id) => apiClient.get(`/students/${id}/`)
 export const updateStudent = (id, data) => apiClient.patch(`/students/${id}/`, data)
 export const deleteStudent = (id) => apiClient.delete(`/students/${id}/`)
 
+export const getMyStudentProfile = () => apiClient.get('/students/me/')
+
 // Enrollments
 export const getEnrollments = (params) => apiClient.get('/students/enrollments/', { params })
 export const createEnrollment = (data) => apiClient.post('/students/enrollments/', data)

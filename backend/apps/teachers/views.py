@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from utils.permissions import IsAdmin, IsAdminOrTeacher
+from rest_framework.permissions import IsAuthenticated
+from utils.permissions import IsAdmin, IsAdminOrTeacher, IsTeacher
 from .models import TeacherProfile, TeacherAssignment, Announcement
 from .serializers import (
     TeacherProfileSerializer,
@@ -65,6 +66,35 @@ def teacher_detail(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# ── Teacher self-view ────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsTeacher])
+def teacher_me(request):
+    try:
+        profile = TeacherProfile.objects.select_related('user').get(user=request.user)
+    except TeacherProfile.DoesNotExist:
+        return Response({'error': 'Teacher profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    data = TeacherProfileSerializer(profile).data
+
+    # Current assignments (current academic year)
+    assignments = TeacherAssignment.objects.select_related(
+        'section__class_group', 'subject', 'academic_year'
+    ).filter(teacher=profile, academic_year__is_current=True)
+    data['assignments'] = TeacherAssignmentSerializer(assignments, many=True).data
+
+    # Sections I am class teacher of
+    from apps.academics.models import Section
+    class_teacher_sections = Section.objects.select_related('class_group', 'academic_year').filter(
+        class_teacher=request.user, academic_year__is_current=True
+    )
+    from apps.academics.serializers import SectionSerializer
+    data['class_teacher_of'] = SectionSerializer(class_teacher_sections, many=True).data
+
+    return Response(data)
+
+
 # ── Teacher Assignments ───────────────────────────────────────────────────────
 
 @api_view(['GET', 'POST'])
@@ -109,15 +139,17 @@ def assignment_detail(request, pk):
 # ── Announcements ─────────────────────────────────────────────────────────────
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminOrTeacher])
+@permission_classes([IsAuthenticated])
 def announcement_list_create(request):
     if request.method == 'GET':
         qs = Announcement.objects.select_related('posted_by', 'target_class').filter(is_active=True)
         audience = request.query_params.get('audience')
         if audience:
-            qs = qs.filter(target_audience=audience)
+            qs = qs.filter(target_audience__in=[audience, 'all'])
         return Response(AnnouncementSerializer(qs, many=True).data)
 
+    if request.user.role not in ('admin', 'teacher'):
+        return Response({'error': 'Only admins and teachers can post announcements.'}, status=status.HTTP_403_FORBIDDEN)
     serializer = AnnouncementSerializer(data=request.data)
     if serializer.is_valid():
         announcement = serializer.save(posted_by=request.user)

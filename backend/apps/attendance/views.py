@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsAdmin, IsAdminOrTeacher
 from apps.students.models import Enrollment
 from .models import AttendanceSession, AttendanceRecord
@@ -118,9 +119,19 @@ def section_students(request):
 # ── Student monthly summary ───────────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrTeacher])
+@permission_classes([IsAuthenticated])
 def student_summary(request, student_id):
-    """GET /attendance/summary/<student_id>/?month=M&year=Y"""
+    """GET /attendance/summary/<student_id>/?month=M&year=Y
+    Accessible by admin/teacher (any student) or the student themselves.
+    """
+    if request.user.role == 'student':
+        from apps.students.models import StudentProfile
+        try:
+            own = StudentProfile.objects.get(user=request.user)
+        except StudentProfile.DoesNotExist:
+            return Response({'error': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+        if own.id != student_id:
+            return Response({'error': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
     month = request.query_params.get('month')
     year = request.query_params.get('year')
 

@@ -7,6 +7,8 @@ export const getTeacher = (id) => apiClient.get(`/teachers/${id}/`)
 export const updateTeacher = (id, data) => apiClient.patch(`/teachers/${id}/`, data)
 export const deleteTeacher = (id) => apiClient.delete(`/teachers/${id}/`)
 
+export const getMyTeacherProfile = () => apiClient.get('/teachers/me/')
+
 // Assignments
 export const getAssignments = (params) => apiClient.get('/teachers/assignments/', { params })
 export const createAssignment = (data) => apiClient.post('/teachers/assignments/', data)

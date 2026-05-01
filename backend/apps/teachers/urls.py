@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     teacher_list_create,
     teacher_detail,
+    teacher_me,
     assignment_list_create,
     assignment_detail,
     announcement_list_create,
@@ -10,6 +11,7 @@ from .views import (
 
 urlpatterns = [
     path('', teacher_list_create),
+    path('me/', teacher_me),
     path('<int:pk>/', teacher_detail),
     path('assignments/', assignment_list_create),
     path('assignments/<int:pk>/', assignment_detail),
