@@ -18,7 +18,15 @@ const NAV = [
   { to: '/admin/students', label: 'Students', icon: '🎓' },
   { to: '/admin/teachers', label: 'Teachers', icon: '📚' },
   { to: '/admin/attendance', label: 'Attendance', icon: '✅' },
-  { to: '/admin/fees', label: 'Fees', icon: '💳' },
+  {
+    label: 'Fees',
+    icon: '💳',
+    prefix: '/admin/fees',
+    children: [
+      { to: '/admin/fees/setup', label: 'Setup' },
+      { to: '/admin/fees/collection', label: 'Collection' },
+    ],
+  },
   { to: '/admin/reports', label: 'Reports', icon: '📊' },
 ]
 
