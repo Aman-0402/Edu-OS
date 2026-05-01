@@ -39,8 +39,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      const token = getAccessToken()
-      if (token) await logoutApi(token)
+      await logoutApi()
     } catch {
       // swallow — still clear local state
     } finally {

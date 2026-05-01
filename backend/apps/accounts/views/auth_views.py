@@ -8,8 +8,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from apps.accounts.models import User
 from apps.accounts.serializers import (
@@ -20,23 +21,85 @@ from apps.accounts.serializers import (
     PasswordResetConfirmSerializer,
 )
 
+REFRESH_COOKIE = 'refresh_token'
+REFRESH_COOKIE_PATH = '/api/auth/'
+REFRESH_MAX_AGE = 7 * 24 * 60 * 60  # 7 days in seconds
+
+
+def _set_refresh_cookie(response, refresh_token):
+    response.set_cookie(
+        REFRESH_COOKIE,
+        refresh_token,
+        max_age=REFRESH_MAX_AGE,
+        httponly=True,
+        secure=getattr(settings, 'REFRESH_TOKEN_COOKIE_SECURE', False),
+        samesite='Lax',
+        path=REFRESH_COOKIE_PATH,
+    )
+
+
+def _delete_refresh_cookie(response):
+    response.delete_cookie(REFRESH_COOKIE, path=REFRESH_COOKIE_PATH)
+
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            refresh_token = response.data.pop('refresh', None)
+            if refresh_token:
+                _set_refresh_cookie(response, refresh_token)
+        return response
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """Reads refresh token from httpOnly cookie instead of request body."""
+
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get(REFRESH_COOKIE)
+        if not refresh_token:
+            return Response(
+                {'error': 'No refresh token cookie present.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Inject into mutable copy so the parent serializer finds it
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        data['refresh'] = refresh_token
+        request._full_data = data  # override DRF's parsed data
+
+        try:
+            response = super().post(request, *args, **kwargs)
+        except (TokenError, InvalidToken) as e:
+            resp = Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            _delete_refresh_cookie(resp)
+            return resp
+
+        if response.status_code == 200:
+            # ROTATE_REFRESH_TOKENS=True → a new refresh token is returned; store it in cookie
+            new_refresh = response.data.pop('refresh', None)
+            if new_refresh:
+                _set_refresh_cookie(response, new_refresh)
+        else:
+            _delete_refresh_cookie(response)
+
+        return response
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    try:
-        refresh_token = request.data.get('refresh')
-        if not refresh_token:
-            return Response({'error': 'Refresh token required.'}, status=status.HTTP_400_BAD_REQUEST)
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-        return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
-    except Exception:
-        return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
+    refresh_token = request.COOKIES.get(REFRESH_COOKIE) or request.data.get('refresh')
+    response = Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+    _delete_refresh_cookie(response)
+    if refresh_token:
+        try:
+            RefreshToken(refresh_token).blacklist()
+        except Exception:
+            pass  # already expired / invalid — still clear the cookie
+    return response
 
 
 @api_view(['GET', 'PUT'])

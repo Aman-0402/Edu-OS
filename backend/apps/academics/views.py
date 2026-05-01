@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsAdmin, IsAdminOrTeacher
 from .models import AcademicYear, Class, Section, Subject
 from .serializers import (
@@ -50,7 +51,7 @@ def academic_year_detail(request, pk):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrTeacher])
+@permission_classes([IsAuthenticated])
 def current_academic_year(request):
     try:
         obj = AcademicYear.objects.get(is_current=True)

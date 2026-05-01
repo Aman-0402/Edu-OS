@@ -3,8 +3,8 @@ import apiClient from './client'
 export const loginApi = (email, password) =>
   apiClient.post('/auth/login/', { email, password })
 
-export const logoutApi = (refresh) =>
-  apiClient.post('/auth/logout/', { refresh })
+export const logoutApi = () =>
+  apiClient.post('/auth/logout/', {})
 
 export const refreshTokenApi = () =>
   apiClient.post('/auth/token/refresh/', {})
