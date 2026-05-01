@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 const NAV = [
-  { to: '/parent/dashboard', label: 'Dashboard', icon: '▦' },
+  { to: '/parent/dashboard', label: 'My Children', icon: '👨‍👩‍👧' },
 ]
 
 export default function ParentLayout() {

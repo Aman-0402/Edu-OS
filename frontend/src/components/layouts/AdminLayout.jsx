@@ -27,6 +27,7 @@ const NAV = [
       { to: '/admin/fees/collection', label: 'Collection' },
     ],
   },
+  { to: '/admin/parents', label: 'Parents', icon: '👨‍👩‍👧' },
   { to: '/admin/reports', label: 'Reports', icon: '📊' },
 ]
 
