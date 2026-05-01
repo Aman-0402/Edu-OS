@@ -65,26 +65,25 @@ class CookieTokenRefreshView(TokenRefreshView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Inject into mutable copy so the parent serializer finds it
-        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
-        data['refresh'] = refresh_token
-        request._full_data = data  # override DRF's parsed data
-
+        # Build the serializer directly with the cookie value — avoids mutating request.data
+        serializer = self.get_serializer(data={'refresh': refresh_token})
         try:
-            response = super().post(request, *args, **kwargs)
-        except (TokenError, InvalidToken) as e:
-            resp = Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            resp = Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            _delete_refresh_cookie(resp)
+            return resp
+        except InvalidToken as e:
+            resp = Response(e.detail, status=status.HTTP_401_UNAUTHORIZED)
             _delete_refresh_cookie(resp)
             return resp
 
-        if response.status_code == 200:
-            # ROTATE_REFRESH_TOKENS=True → a new refresh token is returned; store it in cookie
-            new_refresh = response.data.pop('refresh', None)
-            if new_refresh:
-                _set_refresh_cookie(response, new_refresh)
-        else:
-            _delete_refresh_cookie(response)
-
+        data = dict(serializer.validated_data)
+        # ROTATE_REFRESH_TOKENS=True → new refresh token in response; move it to cookie
+        new_refresh = data.pop('refresh', None)
+        response = Response(data, status=status.HTTP_200_OK)
+        if new_refresh:
+            _set_refresh_cookie(response, new_refresh)
         return response
 
 

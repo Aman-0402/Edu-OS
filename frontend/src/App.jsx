@@ -33,6 +33,7 @@ import MarkAttendance from '@/pages/teacher/attendance/MarkAttendance'
 import FeeSetup from '@/pages/admin/fees/FeeSetup'
 import FeeCollection from '@/pages/admin/fees/FeeCollection'
 import ParentsPage from '@/pages/admin/parents/ParentsPage'
+import Reports from '@/pages/admin/Reports'
 
 function RootRedirect() {
   const { user, isLoading } = useAuth()
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="fees/collection" element={<FeeCollection />} />
 
           <Route path="parents" element={<ParentsPage />} />
+          <Route path="reports" element={<Reports />} />
         </Route>
 
         {/* Teacher */}
