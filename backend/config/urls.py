@@ -14,4 +14,5 @@ urlpatterns = [
     path('api/health/', health_check, name='health-check'),
     path('api/auth/', include('apps.accounts.urls.auth')),
     path('api/users/', include('apps.accounts.urls.users')),
+    path('api/academics/', include('apps.academics.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

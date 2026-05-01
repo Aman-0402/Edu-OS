@@ -1,10 +1,20 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 const NAV = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: '▦' },
   { to: '/admin/users', label: 'Users', icon: '👥' },
-  { to: '/admin/academics', label: 'Academics', icon: '🏫' },
+  {
+    label: 'Academics',
+    icon: '🏫',
+    prefix: '/admin/academics',
+    children: [
+      { to: '/admin/academics/years', label: 'Years' },
+      { to: '/admin/academics/classes', label: 'Classes' },
+      { to: '/admin/academics/sections', label: 'Sections' },
+      { to: '/admin/academics/subjects', label: 'Subjects' },
+    ],
+  },
   { to: '/admin/students', label: 'Students', icon: '🎓' },
   { to: '/admin/teachers', label: 'Teachers', icon: '📚' },
   { to: '/admin/attendance', label: 'Attendance', icon: '✅' },
@@ -15,6 +25,7 @@ const NAV = [
 export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = async () => {
     await logout()
@@ -36,22 +47,56 @@ export default function AdminLayout() {
 
         {/* Nav */}
         <nav className="flex-1 py-4 overflow-y-auto">
-          {NAV.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700 font-medium border-r-2 border-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`
-              }
-            >
-              <span>{icon}</span>
-              {label}
-            </NavLink>
-          ))}
+          {NAV.map((item) => {
+            if (item.children) {
+              const isGroupActive = location.pathname.startsWith(item.prefix)
+              return (
+                <div key={item.label}>
+                  <div
+                    className={`flex items-center gap-3 px-5 py-2.5 text-sm ${
+                      isGroupActive ? 'text-blue-700 font-medium' : 'text-gray-600'
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    {item.label}
+                  </div>
+                  <div className="ml-8 border-l border-gray-100">
+                    {item.children.map(({ to, label }) => (
+                      <NavLink
+                        key={to}
+                        to={to}
+                        className={({ isActive }) =>
+                          `block px-4 py-1.5 text-sm transition-colors ${
+                            isActive
+                              ? 'text-blue-700 font-medium'
+                              : 'text-gray-500 hover:text-gray-900'
+                          }`
+                        }
+                      >
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-700 font-medium border-r-2 border-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <span>{item.icon}</span>
+                {item.label}
+              </NavLink>
+            )
+          })}
         </nav>
 
         {/* User footer */}

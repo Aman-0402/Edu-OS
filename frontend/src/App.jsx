@@ -14,6 +14,11 @@ import TeacherDashboard from '@/pages/teacher/Dashboard'
 import StudentDashboard from '@/pages/student/Dashboard'
 import ParentDashboard from '@/pages/parent/Dashboard'
 
+import AcademicYears from '@/pages/admin/academics/AcademicYears'
+import Classes from '@/pages/admin/academics/Classes'
+import Sections from '@/pages/admin/academics/Sections'
+import Subjects from '@/pages/admin/academics/Subjects'
+
 function RootRedirect() {
   const { user, isLoading } = useAuth()
   if (isLoading) return null
@@ -48,6 +53,11 @@ export default function App() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="academics" element={<Navigate to="years" replace />} />
+          <Route path="academics/years" element={<AcademicYears />} />
+          <Route path="academics/classes" element={<Classes />} />
+          <Route path="academics/sections" element={<Sections />} />
+          <Route path="academics/subjects" element={<Subjects />} />
         </Route>
 
         {/* Teacher */}
