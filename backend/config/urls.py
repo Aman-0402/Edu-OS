@@ -6,11 +6,12 @@ from django.http import JsonResponse
 
 
 def health_check(request):
-    return JsonResponse({'status': 'ok', 'message': 'EduOS API is running'})
+    return JsonResponse({'success': True, 'message': 'EduOS API is running'})
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health_check, name='health-check'),
-    path('api/accounts/', include('accounts.urls')),
+    path('api/auth/', include('apps.accounts.urls.auth')),
+    path('api/users/', include('apps.accounts.urls.users')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
