@@ -27,6 +27,9 @@ import TeachersList from '@/pages/admin/teachers/TeachersList'
 import TeacherForm from '@/pages/admin/teachers/TeacherForm'
 import TeacherDetail from '@/pages/admin/teachers/TeacherDetail'
 
+import AttendanceReport from '@/pages/admin/attendance/AttendanceReport'
+import MarkAttendance from '@/pages/teacher/attendance/MarkAttendance'
+
 function RootRedirect() {
   const { user, isLoading } = useAuth()
   if (isLoading) return null
@@ -74,6 +77,8 @@ export default function App() {
           <Route path="teachers" element={<TeachersList />} />
           <Route path="teachers/new" element={<TeacherForm />} />
           <Route path="teachers/:id" element={<TeacherDetail />} />
+
+          <Route path="attendance" element={<AttendanceReport />} />
         </Route>
 
         {/* Teacher */}
@@ -89,6 +94,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<TeacherDashboard />} />
+          <Route path="attendance" element={<MarkAttendance />} />
         </Route>
 
         {/* Student */}
