@@ -39,6 +39,8 @@ export default function StudentDetail() {
         guardian_name: student.guardian_name ?? '',
         guardian_phone: student.guardian_phone ?? '',
         guardian_relation: student.guardian_relation ?? '',
+        guardian_occupation: student.guardian_occupation ?? '',
+        guardian_salary_range: student.guardian_salary_range ?? '',
       })
     }
   }, [student])
@@ -176,6 +178,18 @@ export default function StudentDetail() {
                     ))}
                   </select>
                 </div>
+                <LabeledInput label="Occupation" value={editForm.guardian_occupation}
+                  onChange={(v) => setEditForm({ ...editForm, guardian_occupation: v })} />
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Salary Range</label>
+                  <select value={editForm.guardian_salary_range} onChange={(e) => setEditForm({ ...editForm, guardian_salary_range: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select range</option>
+                    {['Below ₹1L','₹1L–3L','₹3L–5L','₹5L–10L','₹10L–20L','Above ₹20L'].map((r) => (
+                      <option key={r} value={r}>{r} / year</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
                   <textarea rows={2} value={editForm.address}
@@ -205,6 +219,8 @@ export default function StudentDetail() {
               <InfoRow label="Guardian" value={student.guardian_name} />
               <InfoRow label="Guardian Phone" value={student.guardian_phone} />
               <InfoRow label="Guardian Relation" value={student.guardian_relation} />
+              <InfoRow label="Occupation" value={student.guardian_occupation} />
+              <InfoRow label="Salary Range" value={student.guardian_salary_range} />
             </div>
           )}
         </div>

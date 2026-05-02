@@ -24,6 +24,8 @@ class StudentProfile(models.Model):
     guardian_name = models.CharField(max_length=100, blank=True)
     guardian_phone = models.CharField(max_length=20, blank=True)
     guardian_relation = models.CharField(max_length=50, blank=True)
+    guardian_occupation = models.CharField(max_length=100, blank=True)
+    guardian_salary_range = models.CharField(max_length=50, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

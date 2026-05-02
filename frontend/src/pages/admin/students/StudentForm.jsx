@@ -9,6 +9,7 @@ const EMPTY = {
   date_of_birth: '', gender: '', address: '', blood_group: '',
   father_name: '', mother_name: '',
   guardian_name: '', guardian_phone: '', guardian_relation: '',
+  guardian_occupation: '', guardian_salary_range: '',
 }
 
 function buildPassword(firstName, dob) {
@@ -224,6 +225,22 @@ export default function StudentForm() {
             <Field label="Guardian Phone" error={fieldError('guardian_phone')}>
               <input value={form.guardian_phone} onChange={(e) => set('guardian_phone', e.target.value)}
                 className={input(fieldError('guardian_phone'))} placeholder="+91 9876543210" />
+            </Field>
+            <Field label="Occupation" error={fieldError('guardian_occupation')}>
+              <input value={form.guardian_occupation} onChange={(e) => set('guardian_occupation', e.target.value)}
+                className={input(fieldError('guardian_occupation'))} placeholder="e.g. Teacher, Engineer" />
+            </Field>
+            <Field label="Salary Range" error={fieldError('guardian_salary_range')}>
+              <select value={form.guardian_salary_range} onChange={(e) => set('guardian_salary_range', e.target.value)}
+                className={input(fieldError('guardian_salary_range'))}>
+                <option value="">Select range</option>
+                <option value="Below ₹1L">Below ₹1L / year</option>
+                <option value="₹1L–3L">₹1L – 3L / year</option>
+                <option value="₹3L–5L">₹3L – 5L / year</option>
+                <option value="₹5L–10L">₹5L – 10L / year</option>
+                <option value="₹10L–20L">₹10L – 20L / year</option>
+                <option value="Above ₹20L">Above ₹20L / year</option>
+              </select>
             </Field>
           </div>
         </section>
