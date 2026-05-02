@@ -6,6 +6,8 @@ import { getAcademicYears, getSections, getSubjects } from '@/api/academics'
 import { useAcademicYear } from '@/contexts/AcademicYearContext'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import { confirmAction } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 export default function TeacherDetail() {
   const { id } = useParams()
@@ -62,7 +64,9 @@ export default function TeacherDetail() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['teacher', id] })
       setEditMode(false)
+      toastSuccess('Teacher updated')
     },
+    onError: () => toastError('Failed to update teacher'),
   })
 
   const assignMut = useMutation({
@@ -72,15 +76,19 @@ export default function TeacherDetail() {
       setAssignModal(false)
       setAssignForm({ academic_year: '', section: '', subject: '' })
       setAssignError('')
+      toastSuccess('Assignment created')
     },
-    onError: (e) => setAssignError(
-      e.response?.data?.non_field_errors?.[0] ?? e.response?.data?.detail ?? 'Failed to assign'
-    ),
+    onError: (e) => {
+      const msg = e.response?.data?.non_field_errors?.[0] ?? e.response?.data?.detail ?? 'Failed to assign'
+      setAssignError(msg)
+      toastError(msg)
+    },
   })
 
   const removeMut = useMutation({
     mutationFn: deleteAssignment,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['assignments'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assignments'] }); toastSuccess('Assignment removed') },
+    onError: () => toastError('Failed to remove assignment'),
   })
 
   if (isLoading) return <div className="text-sm text-gray-500">Loading...</div>
@@ -212,8 +220,8 @@ export default function TeacherDetail() {
                   <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">{a.subject_code}</span>
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <button onClick={() => {
-                    if (confirm('Remove this assignment?')) removeMut.mutate(a.id)
+                  <button onClick={async () => {
+                    if (await confirmAction('Remove Assignment', 'Remove this section/subject assignment?', 'Remove')) removeMut.mutate(a.id)
                   }} className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
                 </td>
               </tr>

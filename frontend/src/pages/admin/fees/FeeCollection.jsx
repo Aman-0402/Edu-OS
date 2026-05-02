@@ -6,6 +6,7 @@ import { useAcademicYear } from '@/contexts/AcademicYearContext'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const STATUS_COLORS = {
   pending: 'bg-red-100 text-red-700',
@@ -24,9 +25,14 @@ function PaymentModal({ studentFee, onClose }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['studentFees'] })
       qc.invalidateQueries({ queryKey: ['defaulters'] })
+      toastSuccess('Payment recorded successfully')
       onClose()
     },
-    onError: (e) => setError(e.response?.data?.amount_paid?.[0] ?? e.response?.data?.detail ?? 'Payment failed'),
+    onError: (e) => {
+      const msg = e.response?.data?.amount_paid?.[0] ?? e.response?.data?.detail ?? 'Payment failed'
+      setError(msg)
+      toastError(msg)
+    },
   })
 
   const balance = studentFee.balance

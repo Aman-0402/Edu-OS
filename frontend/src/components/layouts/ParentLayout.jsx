@@ -1,55 +1,65 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { IconParents, IconSignOut } from '@/components/ui/Icons'
 
 const NAV = [
-  { to: '/parent/dashboard', label: 'My Children', icon: '👨‍👩‍👧' },
+  { to: '/parent/dashboard', label: 'My Children', Icon: IconParents },
 ]
 
 export default function ParentLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
-        <div className="h-16 flex items-center px-5 border-b border-gray-200">
-          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+    <div className="flex h-screen bg-slate-50">
+      <aside className="w-60 bg-[#0f1623] flex flex-col shrink-0">
+        <div className="h-16 flex items-center px-5 border-b border-white/10">
+          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3 shrink-0">
             <span className="text-white text-sm font-bold">E</span>
           </div>
-          <span className="font-semibold text-gray-900">EduOS</span>
-          <span className="ml-2 text-xs text-gray-400">Parent</span>
+          <span className="font-semibold text-white">EduOS</span>
+          <span className="ml-auto text-[10px] font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">Parent</span>
         </div>
-        <nav className="flex-1 py-4">
-          {NAV.map(({ to, label, icon }) => (
+        <nav className="flex-1 py-3 overflow-y-auto">
+          {NAV.map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${
+                `flex items-center gap-3 px-4 py-2.5 text-sm mx-2 rounded-lg mb-0.5 transition-colors ${
                   isActive
-                    ? 'bg-orange-50 text-orange-700 font-medium border-r-2 border-orange-500'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-blue-600 text-white font-medium'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                 }`
               }
             >
-              <span>{icon}</span>
+              <Icon className="w-4 h-4 shrink-0" />
               {label}
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-200">
-          <p className="text-sm font-medium text-gray-900 truncate">{user?.full_name}</p>
-          <button
-            onClick={async () => { await logout(); navigate('/login') }}
-            className="text-xs text-gray-500 hover:text-red-600 mt-1"
-          >
-            Sign out
-          </button>
+        <div className="p-3 border-t border-white/10">
+          <div className="flex items-center gap-2.5 p-2 rounded-lg">
+            <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-semibold">{user?.full_name?.[0] ?? 'P'}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
+              <p className="text-xs text-slate-400">Parent</p>
+            </div>
+            <button onClick={async () => { await logout(); navigate('/login') }} title="Sign out"
+              className="text-slate-500 hover:text-red-400 transition-colors p-1">
+              <IconSignOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </aside>
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6">
-          <h2 className="text-sm font-medium text-gray-500">Parent Portal</h2>
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6">
+          <p className="text-sm text-slate-500">
+            {location.pathname.split('/').filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' / ')}
+          </p>
         </header>
         <div className="flex-1 overflow-y-auto p-6"><Outlet /></div>
       </main>

@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { getStudents, deleteStudent } from '@/api/students'
 import PageHeader from '@/components/ui/PageHeader'
 import Pagination from '@/components/ui/Pagination'
+import { confirmDelete } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const PAGE_SIZE = 20
 
@@ -31,7 +33,8 @@ export default function StudentsList() {
 
   const deleteMut = useMutation({
     mutationFn: deleteStudent,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['students'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['students'] }); toastSuccess('Student removed') },
+    onError: () => toastError('Failed to remove student'),
   })
 
   return (
@@ -97,7 +100,7 @@ export default function StudentsList() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <Link to={`/admin/students/${s.id}`} className="text-xs text-blue-600 hover:text-blue-800 font-medium">View</Link>
-                      <button onClick={() => { if (confirm(`Remove student "${s.full_name}"?`)) deleteMut.mutate(s.id) }}
+                      <button onClick={async () => { if (await confirmDelete(`Remove student "${s.full_name}"?`)) deleteMut.mutate(s.id) }}
                         className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
                     </div>
                   </td>

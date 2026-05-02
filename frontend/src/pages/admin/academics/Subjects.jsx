@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getClasses, getSubjects, createSubject, updateSubject, deleteSubject } from '@/api/academics'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import { confirmDelete } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const EMPTY_FORM = { name: '', code: '', class_group: '' }
 
@@ -30,19 +32,20 @@ export default function Subjects() {
 
   const createMut = useMutation({
     mutationFn: createSubject,
-    onSuccess: () => { invalidate(); close() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to create'),
+    onSuccess: () => { invalidate(); close(); toastSuccess('Subject created') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to create'; setError(msg); toastError(msg) },
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => updateSubject(id, data),
-    onSuccess: () => { invalidate(); close() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to update'),
+    onSuccess: () => { invalidate(); close(); toastSuccess('Subject updated') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to update'; setError(msg); toastError(msg) },
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteSubject,
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toastSuccess('Subject deleted') },
+    onError: () => toastError('Failed to delete subject'),
   })
 
   function openCreate() {
@@ -143,8 +146,8 @@ export default function Subjects() {
                         Edit
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Delete "${sub.name}"?`)) deleteMut.mutate(sub.id)
+                        onClick={async () => {
+                          if (await confirmDelete(`Delete "${sub.name}"?`)) deleteMut.mutate(sub.id)
                         }}
                         className="text-xs text-red-500 hover:text-red-700 font-medium"
                       >

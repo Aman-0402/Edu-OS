@@ -12,6 +12,8 @@ import { useAcademicYear } from '@/contexts/AcademicYearContext'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
 import apiClient from '@/api/client'
+import { confirmDelete } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const EMPTY_FORM = { name: '', class_group: '', capacity: '' }
 const EMPTY_TEACHER_FORM = { class_teacher_id: '' }
@@ -53,25 +55,26 @@ export default function Sections() {
 
   const createMut = useMutation({
     mutationFn: createSection,
-    onSuccess: () => { invalidate(); closeSection() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to create'),
+    onSuccess: () => { invalidate(); closeSection(); toastSuccess('Section created') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to create'; setError(msg); toastError(msg) },
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => updateSection(id, data),
-    onSuccess: () => { invalidate(); closeSection() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to update'),
+    onSuccess: () => { invalidate(); closeSection(); toastSuccess('Section updated') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to update'; setError(msg); toastError(msg) },
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteSection,
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toastSuccess('Section deleted') },
+    onError: () => toastError('Failed to delete section'),
   })
 
   const assignMut = useMutation({
     mutationFn: ({ id, teacher_id }) => assignTeacher(id, teacher_id),
-    onSuccess: () => { invalidate(); closeTeacher() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to assign teacher'),
+    onSuccess: () => { invalidate(); closeTeacher(); toastSuccess('Teacher assigned') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to assign teacher'; setError(msg); toastError(msg) },
   })
 
   function openCreate() {
@@ -225,8 +228,8 @@ export default function Sections() {
                         Edit
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Delete section "${sec.full_name ?? sec.name}"?`)) deleteMut.mutate(sec.id)
+                        onClick={async () => {
+                          if (await confirmDelete(`Delete section "${sec.full_name ?? sec.name}"?`)) deleteMut.mutate(sec.id)
                         }}
                         className="text-xs text-red-500 hover:text-red-700 font-medium"
                       >

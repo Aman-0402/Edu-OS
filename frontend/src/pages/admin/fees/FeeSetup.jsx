@@ -9,6 +9,8 @@ import { getAcademicYears, getClasses } from '@/api/academics'
 import { useAcademicYear } from '@/contexts/AcademicYearContext'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import { confirmDelete } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 // ── Tab: Categories ───────────────────────────────────────────────────────────
 
@@ -26,9 +28,9 @@ function CategoriesTab() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['feeCategories'] })
 
-  const createMut = useMutation({ mutationFn: createCategory, onSuccess: () => { invalidate(); close() }, onError: (e) => setError(e.response?.data?.name?.[0] ?? 'Failed') })
-  const updateMut = useMutation({ mutationFn: ({ id, data }) => updateCategory(id, data), onSuccess: () => { invalidate(); close() }, onError: (e) => setError(e.response?.data?.name?.[0] ?? 'Failed') })
-  const deleteMut = useMutation({ mutationFn: deleteCategory, onSuccess: invalidate })
+  const createMut = useMutation({ mutationFn: createCategory, onSuccess: () => { invalidate(); close(); toastSuccess('Category created') }, onError: (e) => { const m = e.response?.data?.name?.[0] ?? 'Failed'; setError(m); toastError(m) } })
+  const updateMut = useMutation({ mutationFn: ({ id, data }) => updateCategory(id, data), onSuccess: () => { invalidate(); close(); toastSuccess('Category updated') }, onError: (e) => { const m = e.response?.data?.name?.[0] ?? 'Failed'; setError(m); toastError(m) } })
+  const deleteMut = useMutation({ mutationFn: deleteCategory, onSuccess: () => { invalidate(); toastSuccess('Category deleted') }, onError: () => toastError('Failed to delete category') })
 
   function open(cat = null) {
     setEditing(cat)
@@ -70,7 +72,7 @@ function CategoriesTab() {
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <button onClick={() => open(c)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-                    <button onClick={() => { if (confirm(`Delete "${c.name}"?`)) deleteMut.mutate(c.id) }} className="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+                    <button onClick={async () => { if (await confirmDelete(`Delete "${c.name}"?`)) deleteMut.mutate(c.id) }} className="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -137,13 +139,13 @@ function StructuresTab() {
   })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['feeStructures'] })
-  const createMut = useMutation({ mutationFn: createStructure, onSuccess: () => { invalidate(); close() }, onError: (e) => setError(e.response?.data?.non_field_errors?.[0] ?? 'Failed') })
-  const updateMut = useMutation({ mutationFn: ({ id, data }) => updateStructure(id, data), onSuccess: () => { invalidate(); close() }, onError: (e) => setError('Failed to update') })
-  const deleteMut = useMutation({ mutationFn: deleteStructure, onSuccess: invalidate })
+  const createMut = useMutation({ mutationFn: createStructure, onSuccess: () => { invalidate(); close(); toastSuccess('Fee structure created') }, onError: (e) => { const m = e.response?.data?.non_field_errors?.[0] ?? 'Failed'; setError(m); toastError(m) } })
+  const updateMut = useMutation({ mutationFn: ({ id, data }) => updateStructure(id, data), onSuccess: () => { invalidate(); close(); toastSuccess('Fee structure updated') }, onError: (e) => { setError('Failed to update'); toastError('Failed to update fee structure') } })
+  const deleteMut = useMutation({ mutationFn: deleteStructure, onSuccess: () => { invalidate(); toastSuccess('Fee structure deleted') }, onError: () => toastError('Failed to delete fee structure') })
   const assignMut = useMutation({
     mutationFn: bulkAssignFees,
-    onSuccess: (res) => { setAssignResult(res.data.message); setAssigning(false) },
-    onError: (e) => { setError(e.response?.data?.error ?? 'Failed to assign'); setAssigning(false) },
+    onSuccess: (res) => { setAssignResult(res.data.message); setAssigning(false); toastSuccess(res.data.message ?? 'Fees assigned') },
+    onError: (e) => { const m = e.response?.data?.error ?? 'Failed to assign'; setError(m); setAssigning(false); toastError(m) },
   })
 
   function open(s = null) {
@@ -218,7 +220,7 @@ function StructuresTab() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => open(s)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-                      <button onClick={() => { if (confirm('Delete this fee structure?')) deleteMut.mutate(s.id) }} className="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+                      <button onClick={async () => { if (await confirmDelete('Delete this fee structure?')) deleteMut.mutate(s.id) }} className="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
                     </div>
                   </td>
                 </tr>

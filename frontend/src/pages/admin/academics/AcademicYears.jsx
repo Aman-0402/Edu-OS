@@ -8,6 +8,8 @@ import {
 } from '@/api/academics'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import { confirmDelete } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const EMPTY_FORM = { name: '', start_date: '', end_date: '', is_current: false }
 
@@ -27,19 +29,20 @@ export default function AcademicYears() {
 
   const createMut = useMutation({
     mutationFn: createAcademicYear,
-    onSuccess: () => { invalidate(); close() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to create'),
+    onSuccess: () => { invalidate(); close(); toastSuccess('Academic year created') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to create'; setError(msg); toastError(msg) },
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => updateAcademicYear(id, data),
-    onSuccess: () => { invalidate(); close() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to update'),
+    onSuccess: () => { invalidate(); close(); toastSuccess('Academic year updated') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to update'; setError(msg); toastError(msg) },
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteAcademicYear,
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toastSuccess('Academic year deleted') },
+    onError: () => toastError('Failed to delete academic year'),
   })
 
   function openCreate() {
@@ -141,8 +144,8 @@ export default function AcademicYears() {
                       </button>
                       {!y.is_current && (
                         <button
-                          onClick={() => {
-                            if (confirm(`Delete "${y.name}"?`)) deleteMut.mutate(y.id)
+                          onClick={async () => {
+                            if (await confirmDelete(`Delete "${y.name}"? This cannot be undone.`)) deleteMut.mutate(y.id)
                           }}
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
                         >

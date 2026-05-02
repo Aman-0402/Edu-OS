@@ -5,6 +5,8 @@ import { getStudents } from '@/api/students'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
+import { confirmDelete, confirmAction } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const PAGE_SIZE = 20
 const EMPTY_PARENT = { email: '', first_name: '', last_name: '', phone: '', password: '', occupation: '', address: '' }
@@ -56,13 +58,15 @@ export default function ParentsPage() {
       qc.invalidateQueries({ queryKey: ['parents'] })
       setShowCreateModal(false)
       setForm(EMPTY_PARENT)
+      toastSuccess('Parent account created')
     },
-    onError: (e) => setCreateErrors(e.response?.data ?? {}),
+    onError: (e) => { setCreateErrors(e.response?.data ?? {}); toastError('Failed to create parent') },
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteParent,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['parents'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['parents'] }); toastSuccess('Parent removed') },
+    onError: () => toastError('Failed to remove parent'),
   })
 
   const linkMut = useMutation({
@@ -71,13 +75,19 @@ export default function ParentsPage() {
       qc.invalidateQueries({ queryKey: ['parentLinks'] })
       setShowLinkModal(false)
       setLinkForm(EMPTY_LINK)
+      toastSuccess('Parent linked to student')
     },
-    onError: (e) => setLinkError(e.response?.data?.non_field_errors?.[0] ?? 'Failed to create link'),
+    onError: (e) => {
+      const msg = e.response?.data?.non_field_errors?.[0] ?? 'Failed to create link'
+      setLinkError(msg)
+      toastError(msg)
+    },
   })
 
   const unlinkMut = useMutation({
     mutationFn: deleteLink,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['parentLinks'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['parentLinks'] }); toastSuccess('Link removed') },
+    onError: () => toastError('Failed to remove link'),
   })
 
   function fieldErr(f) { return createErrors[f]?.[0] ?? createErrors[f] }
@@ -143,7 +153,7 @@ export default function ParentsPage() {
                             {children.map((l) => (
                               <span key={l.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs">
                                 {l.student_name}
-                                <button onClick={() => { if (confirm('Remove this link?')) unlinkMut.mutate(l.id) }}
+                                <button onClick={async () => { if (await confirmAction('Remove Link', 'Remove this parent-student link?', 'Remove')) unlinkMut.mutate(l.id) }}
                                   className="text-blue-400 hover:text-red-500 leading-none font-bold">×</button>
                               </span>
                             ))}
@@ -151,7 +161,7 @@ export default function ParentsPage() {
                       }
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={() => { if (confirm(`Remove parent "${p.full_name}"?`)) deleteMut.mutate(p.id) }}
+                      <button onClick={async () => { if (await confirmDelete(`Remove parent "${p.full_name}"?`)) deleteMut.mutate(p.id) }}
                         className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
                     </td>
                   </tr>

@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getClasses, createClass, updateClass, deleteClass } from '@/api/academics'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import { confirmDelete } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 const EMPTY_FORM = { name: '', numeric_value: '' }
 
@@ -22,19 +24,20 @@ export default function Classes() {
 
   const createMut = useMutation({
     mutationFn: createClass,
-    onSuccess: () => { invalidate(); close() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to create'),
+    onSuccess: () => { invalidate(); close(); toastSuccess('Class created') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to create'; setError(msg); toastError(msg) },
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => updateClass(id, data),
-    onSuccess: () => { invalidate(); close() },
-    onError: (e) => setError(e.response?.data?.errors?.detail || 'Failed to update'),
+    onSuccess: () => { invalidate(); close(); toastSuccess('Class updated') },
+    onError: (e) => { const msg = e.response?.data?.errors?.detail || 'Failed to update'; setError(msg); toastError(msg) },
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteClass,
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toastSuccess('Class deleted') },
+    onError: () => toastError('Failed to delete class'),
   })
 
   function openCreate() {
@@ -117,8 +120,8 @@ export default function Classes() {
                         Edit
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Delete "${cls.name}"?`)) deleteMut.mutate(cls.id)
+                        onClick={async () => {
+                          if (await confirmDelete(`Delete "${cls.name}"?`)) deleteMut.mutate(cls.id)
                         }}
                         className="text-xs text-red-500 hover:text-red-700 font-medium"
                       >

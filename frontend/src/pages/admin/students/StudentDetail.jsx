@@ -5,6 +5,8 @@ import { getStudent, updateStudent, getEnrollments, createEnrollment, deleteEnro
 import { getAcademicYears, getSections } from '@/api/academics'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import { confirmAction } from '@/lib/alerts'
+import { toastSuccess, toastError } from '@/lib/toast'
 
 export default function StudentDetail() {
   const { id } = useParams()
@@ -59,7 +61,9 @@ export default function StudentDetail() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['student', id] })
       setEditMode(false)
+      toastSuccess('Student updated')
     },
+    onError: () => toastError('Failed to update student'),
   })
 
   const enrollMut = useMutation({
@@ -69,15 +73,19 @@ export default function StudentDetail() {
       setEnrollModal(false)
       setEnrollForm({ academic_year: '', section: '' })
       setEnrollError('')
+      toastSuccess('Student enrolled')
     },
-    onError: (e) => setEnrollError(
-      e.response?.data?.non_field_errors?.[0] ?? e.response?.data?.detail ?? 'Failed to enroll'
-    ),
+    onError: (e) => {
+      const msg = e.response?.data?.non_field_errors?.[0] ?? e.response?.data?.detail ?? 'Failed to enroll'
+      setEnrollError(msg)
+      toastError(msg)
+    },
   })
 
   const unenrollMut = useMutation({
     mutationFn: deleteEnrollment,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['enrollments'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['enrollments'] }); toastSuccess('Enrollment removed') },
+    onError: () => toastError('Failed to remove enrollment'),
   })
 
   if (isLoading) return <div className="text-sm text-gray-500">Loading...</div>
@@ -232,8 +240,8 @@ export default function StudentDetail() {
                   }`}>{e.status}</span>
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <button onClick={() => {
-                    if (confirm('Remove this enrollment?')) unenrollMut.mutate(e.id)
+                  <button onClick={async () => {
+                    if (await confirmAction('Remove Enrollment', 'Remove this enrollment record?', 'Remove')) unenrollMut.mutate(e.id)
                   }} className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
                 </td>
               </tr>
