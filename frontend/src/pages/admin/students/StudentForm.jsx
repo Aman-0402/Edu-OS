@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createStudent } from '@/api/students'
@@ -11,12 +11,12 @@ const EMPTY = {
 }
 
 function buildPassword(firstName, dob) {
-  const initial = firstName.trim()[0]?.toUpperCase() ?? ''
-  if (!initial || !dob) return ''
+  const name = firstName.trim().slice(0, 4)
+  if (!name || !dob) return ''
   // dob is yyyy-mm-dd from the date input → reformat to ddmmyyyy
   const [y, m, d] = dob.split('-')
   if (!y || !m || !d) return ''
-  return `${initial}${d}${m}${y}`
+  return `${name}${d}${m}${y}`
 }
 
 export default function StudentForm() {
@@ -26,15 +26,6 @@ export default function StudentForm() {
   const [errors, setErrors] = useState({})
   const [passwordOverridden, setPasswordOverridden] = useState(false)
   const [showPassword, setShowPassword] = useState(true)
-
-  // Auto-generate password whenever first_name or date_of_birth changes,
-  // unless the admin has manually typed a custom password.
-  useEffect(() => {
-    if (!passwordOverridden) {
-      const generated = buildPassword(form.first_name, form.date_of_birth)
-      setForm((f) => ({ ...f, password: generated }))
-    }
-  }, [form.first_name, form.date_of_birth, passwordOverridden])
 
   const createMut = useMutation({
     mutationFn: createStudent,
@@ -50,18 +41,29 @@ export default function StudentForm() {
   })
 
   function set(field, value) {
-    setForm((f) => ({ ...f, [field]: value }))
+    setForm((f) => {
+      const next = { ...f, [field]: value }
+      // Regenerate password atomically whenever name or DOB changes
+      if (!passwordOverridden && (field === 'first_name' || field === 'date_of_birth')) {
+        next.password = buildPassword(
+          field === 'first_name' ? value : f.first_name,
+          field === 'date_of_birth' ? value : f.date_of_birth,
+        )
+      }
+      return next
+    })
     setErrors((e) => { const next = { ...e }; delete next[field]; return next })
   }
 
   function handlePasswordChange(value) {
     setPasswordOverridden(true)
-    set('password', value)
+    setForm((f) => ({ ...f, password: value }))
+    setErrors((e) => { const next = { ...e }; delete next.password; return next })
   }
 
   function resetPassword() {
     setPasswordOverridden(false)
-    // useEffect will regenerate on next render
+    setForm((f) => ({ ...f, password: buildPassword(f.first_name, f.date_of_birth) }))
   }
 
   function handleSubmit(e) {
