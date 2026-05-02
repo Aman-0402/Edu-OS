@@ -4,13 +4,16 @@ import { getParents, createParent, deleteParent, getLinks, createLink, deleteLin
 import { getStudents } from '@/api/students'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import Pagination from '@/components/ui/Pagination'
 
+const PAGE_SIZE = 20
 const EMPTY_PARENT = { email: '', first_name: '', last_name: '', phone: '', password: '', occupation: '', address: '' }
 const EMPTY_LINK = { parent: '', student: '', relationship: 'guardian', is_primary: false }
 
 export default function ParentsPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [form, setForm] = useState(EMPTY_PARENT)
@@ -18,27 +21,42 @@ export default function ParentsPage() {
   const [createErrors, setCreateErrors] = useState({})
   const [linkError, setLinkError] = useState('')
 
-  const params = {}
+  const params = { page, page_size: PAGE_SIZE }
   if (search) params.search = search
 
-  const { data: parents = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['parents', params],
     queryFn: () => getParents(params).then((r) => r.data),
   })
 
+  const parents = data?.results ?? data ?? []
+  const count = data?.count ?? parents.length
+
+  // Dropdown queries — need all records regardless of list pagination
   const { data: links = [] } = useQuery({
     queryKey: ['parentLinks'],
-    queryFn: () => getLinks({}).then((r) => r.data),
+    queryFn: () => getLinks({ page_size: 500 }).then((r) => r.data?.results ?? r.data),
   })
 
-  const { data: students = [] } = useQuery({
-    queryKey: ['students', {}],
-    queryFn: () => getStudents({}).then((r) => r.data),
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ['students', { page_size: 500 }],
+    queryFn: () => getStudents({ page_size: 500 }).then((r) => r.data?.results ?? r.data),
   })
+
+  const { data: allParents = [] } = useQuery({
+    queryKey: ['parents', { page_size: 500 }],
+    queryFn: () => getParents({ page_size: 500 }).then((r) => r.data?.results ?? r.data),
+  })
+
+  const setSearch_ = (v) => { setSearch(v); setPage(1) }
 
   const createMut = useMutation({
     mutationFn: createParent,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['parents'] }); setShowCreateModal(false); setForm(EMPTY_PARENT) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['parents'] })
+      setShowCreateModal(false)
+      setForm(EMPTY_PARENT)
+    },
     onError: (e) => setCreateErrors(e.response?.data ?? {}),
   })
 
@@ -49,7 +67,11 @@ export default function ParentsPage() {
 
   const linkMut = useMutation({
     mutationFn: createLink,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['parentLinks'] }); setShowLinkModal(false); setLinkForm(EMPTY_LINK) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['parentLinks'] })
+      setShowLinkModal(false)
+      setLinkForm(EMPTY_LINK)
+    },
     onError: (e) => setLinkError(e.response?.data?.non_field_errors?.[0] ?? 'Failed to create link'),
   })
 
@@ -60,7 +82,6 @@ export default function ParentsPage() {
 
   function fieldErr(f) { return createErrors[f]?.[0] ?? createErrors[f] }
 
-  // Build parent→children map for display
   const childrenByParent = {}
   links.forEach((l) => {
     if (!childrenByParent[l.parent]) childrenByParent[l.parent] = []
@@ -71,7 +92,7 @@ export default function ParentsPage() {
     <div>
       <PageHeader
         title="Parents"
-        subtitle={`${parents.length} parent account${parents.length !== 1 ? 's' : ''}`}
+        subtitle={`${count} parent account${count !== 1 ? 's' : ''}`}
         action={
           <div className="flex gap-2">
             <button onClick={() => { setShowLinkModal(true); setLinkError('') }}
@@ -87,7 +108,8 @@ export default function ParentsPage() {
       />
 
       <div className="mb-4">
-        <input type="text" placeholder="Search by name or email" value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder="Search by name or email" value={search}
+          onChange={(e) => setSearch_(e.target.value)}
           className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
@@ -104,7 +126,9 @@ export default function ParentsPage() {
               </tr>
             </thead>
             <tbody>
-              {parents.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No parents yet.</td></tr>}
+              {parents.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No parents yet.</td></tr>
+              )}
               {parents.map((p) => {
                 const children = childrenByParent[p.id] ?? []
                 return (
@@ -135,10 +159,10 @@ export default function ParentsPage() {
               })}
             </tbody>
           </table>
+          <Pagination count={count} page={page} pageSize={PAGE_SIZE} onChange={setPage} />
         </div>
       )}
 
-      {/* Create Parent Modal */}
       {showCreateModal && (
         <Modal title="Add Parent" onClose={() => setShowCreateModal(false)}>
           <form onSubmit={(e) => { e.preventDefault(); setCreateErrors({}); createMut.mutate(form) }} className="space-y-3">
@@ -180,7 +204,6 @@ export default function ParentsPage() {
         </Modal>
       )}
 
-      {/* Link Modal */}
       {showLinkModal && (
         <Modal title="Link Parent to Student" onClose={() => setShowLinkModal(false)}>
           <form onSubmit={(e) => { e.preventDefault(); setLinkError(''); linkMut.mutate({ ...linkForm, parent: parseInt(linkForm.parent), student: parseInt(linkForm.student) }) }} className="space-y-4">
@@ -190,7 +213,7 @@ export default function ParentsPage() {
               <select required value={linkForm.parent} onChange={(e) => setLinkForm({ ...linkForm, parent: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select parent</option>
-                {parents.map((p) => <option key={p.id} value={p.id}>{p.full_name} ({p.email})</option>)}
+                {allParents.map((p) => <option key={p.id} value={p.id}>{p.full_name} ({p.email})</option>)}
               </select>
             </div>
             <div>
@@ -198,7 +221,7 @@ export default function ParentsPage() {
               <select required value={linkForm.student} onChange={(e) => setLinkForm({ ...linkForm, student: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select student</option>
-                {students.map((s) => <option key={s.id} value={s.id}>{s.full_name} ({s.admission_number})</option>)}
+                {allStudents.map((s) => <option key={s.id} value={s.id}>{s.full_name} ({s.admission_number})</option>)}
               </select>
             </div>
             <div>

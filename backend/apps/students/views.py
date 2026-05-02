@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsAdmin, IsAdminOrTeacher, IsStudent
+from utils.pagination import StandardResultsPagination
 from .models import StudentProfile, Enrollment
 from .serializers import (
     StudentProfileSerializer,
@@ -33,7 +34,12 @@ def student_list_create(request):
         if gender:
             qs = qs.filter(gender=gender)
 
-        return Response(StudentProfileSerializer(qs.distinct(), many=True).data)
+        qs = qs.distinct()
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(qs, request)
+        if page is not None:
+            return paginator.get_paginated_response(StudentProfileSerializer(page, many=True).data)
+        return Response(StudentProfileSerializer(qs, many=True).data)
 
     serializer = StudentCreateSerializer(data=request.data)
     if serializer.is_valid():

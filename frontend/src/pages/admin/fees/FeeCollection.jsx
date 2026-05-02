@@ -5,6 +5,7 @@ import { getAcademicYears, getClasses } from '@/api/academics'
 import { useAcademicYear } from '@/contexts/AcademicYearContext'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import Pagination from '@/components/ui/Pagination'
 
 const STATUS_COLORS = {
   pending: 'bg-red-100 text-red-700',
@@ -82,24 +83,32 @@ function PaymentModal({ studentFee, onClose }) {
 
 // ── Tab: Collect Fees ─────────────────────────────────────────────────────────
 
+const FEE_PAGE_SIZE = 20
+
 function CollectTab() {
   const { years, selectedYearId, setSelectedYearId } = useAcademicYear()
   const [classId, setClassId] = useState('')
   const [feeStatus, setFeeStatus] = useState('')
+  const [feePage, setFeePage] = useState(1)
   const [payingFee, setPayingFee] = useState(null)
 
   const { data: classes = [] } = useQuery({ queryKey: ['classes'], queryFn: () => getClasses().then((r) => r.data) })
 
-  const params = {}
+  const params = { page: feePage, page_size: FEE_PAGE_SIZE }
   if (selectedYearId) params.academic_year = selectedYearId
   if (classId) params.class_group = classId
   if (feeStatus) params.status = feeStatus
 
-  const { data: fees = [], isLoading } = useQuery({
+  const resetPage = () => setFeePage(1)
+
+  const { data: feesData, isLoading } = useQuery({
     queryKey: ['studentFees', params],
     queryFn: () => getStudentFees(params).then((r) => r.data),
     enabled: !!selectedYearId,
   })
+
+  const fees = feesData?.results ?? feesData ?? []
+  const feesCount = feesData?.count ?? fees.length
 
   return (
     <div>
@@ -109,12 +118,12 @@ function CollectTab() {
           <option value="">Select Year</option>
           {years.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
         </select>
-        <select value={classId} onChange={(e) => setClassId(e.target.value)}
+        <select value={classId} onChange={(e) => { setClassId(e.target.value); resetPage() }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">All Classes</option>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select value={feeStatus} onChange={(e) => setFeeStatus(e.target.value)}
+        <select value={feeStatus} onChange={(e) => { setFeeStatus(e.target.value); resetPage() }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">All Status</option>
           <option value="pending">Pending</option>
@@ -165,6 +174,7 @@ function CollectTab() {
               ))}
             </tbody>
           </table>
+          <Pagination count={feesCount} page={feePage} pageSize={FEE_PAGE_SIZE} onChange={setFeePage} />
         </div>
       )}
 

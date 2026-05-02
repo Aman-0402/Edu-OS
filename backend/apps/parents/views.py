@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from utils.permissions import IsAdmin, IsParent
+from utils.pagination import StandardResultsPagination
 from .models import ParentProfile, ParentStudentLink
 from .serializers import (
     ParentProfileSerializer,
@@ -25,6 +26,11 @@ def parent_list_create(request):
             qs = qs.filter(user__first_name__icontains=search) \
                  | qs.filter(user__last_name__icontains=search) \
                  | qs.filter(user__email__icontains=search)
+        qs = qs.distinct()
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(qs, request)
+        if page is not None:
+            return paginator.get_paginated_response(ParentProfileSerializer(page, many=True).data)
         return Response(ParentProfileSerializer(qs.distinct(), many=True).data)
 
     s = ParentCreateSerializer(data=request.data)

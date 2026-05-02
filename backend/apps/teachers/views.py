@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsAdmin, IsAdminOrTeacher, IsTeacher
+from utils.pagination import StandardResultsPagination
 from .models import TeacherProfile, TeacherAssignment, Announcement
 from .serializers import (
     TeacherProfileSerializer,
@@ -30,7 +31,12 @@ def teacher_list_create(request):
                  | qs.filter(user__email__icontains=search) \
                  | qs.filter(employee_id__icontains=search)
 
-        return Response(TeacherProfileSerializer(qs.distinct(), many=True).data)
+        qs = qs.distinct()
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(qs, request)
+        if page is not None:
+            return paginator.get_paginated_response(TeacherProfileSerializer(page, many=True).data)
+        return Response(TeacherProfileSerializer(qs, many=True).data)
 
     serializer = TeacherCreateSerializer(data=request.data)
     if serializer.is_valid():

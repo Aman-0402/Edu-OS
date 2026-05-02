@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsAdmin
+from utils.pagination import StandardResultsPagination
 from .models import FeeCategory, FeeStructure, StudentFee, FeePayment
 from .serializers import (
     FeeCategorySerializer,
@@ -167,6 +168,10 @@ def student_fee_list(request):
     if fee_status:
         qs = qs.filter(status=fee_status)
 
+    paginator = StandardResultsPagination()
+    page = paginator.paginate_queryset(qs, request)
+    if page is not None:
+        return paginator.get_paginated_response(StudentFeeSerializer(page, many=True).data)
     return Response(StudentFeeSerializer(qs, many=True).data)
 
 
