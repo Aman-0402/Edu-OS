@@ -6,8 +6,9 @@ import PageHeader from '@/components/ui/PageHeader'
 
 const EMPTY = {
   email: '', first_name: '', last_name: '', phone: '', password: '',
-  date_of_birth: '', gender: '', address: '',
-  blood_group: '', guardian_name: '', guardian_phone: '',
+  date_of_birth: '', gender: '', address: '', blood_group: '',
+  father_name: '', mother_name: '',
+  guardian_name: '', guardian_phone: '', guardian_relation: '',
 }
 
 function buildPassword(firstName, dob) {
@@ -183,13 +184,42 @@ export default function StudentForm() {
           </div>
         </section>
 
+        {/* Parents */}
+        <section>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Parents</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Father's Name" error={fieldError('father_name')}>
+              <input value={form.father_name} onChange={(e) => set('father_name', e.target.value)}
+                className={input(fieldError('father_name'))} placeholder="Father's full name" />
+            </Field>
+            <Field label="Mother's Name" error={fieldError('mother_name')}>
+              <input value={form.mother_name} onChange={(e) => set('mother_name', e.target.value)}
+                className={input(fieldError('mother_name'))} placeholder="Mother's full name" />
+            </Field>
+          </div>
+        </section>
+
         {/* Guardian */}
         <section>
           <h3 className="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Guardian</h3>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Guardian Name" error={fieldError('guardian_name')}>
               <input value={form.guardian_name} onChange={(e) => set('guardian_name', e.target.value)}
-                className={input(fieldError('guardian_name'))} placeholder="Parent / Guardian name" />
+                className={input(fieldError('guardian_name'))} placeholder="Guardian full name" />
+            </Field>
+            <Field label="Relation to Student" error={fieldError('guardian_relation')}>
+              <select value={form.guardian_relation} onChange={(e) => set('guardian_relation', e.target.value)}
+                className={input(fieldError('guardian_relation'))}>
+                <option value="">Select relation</option>
+                <option value="Father">Father</option>
+                <option value="Mother">Mother</option>
+                <option value="Grandfather">Grandfather</option>
+                <option value="Grandmother">Grandmother</option>
+                <option value="Uncle">Uncle</option>
+                <option value="Aunt">Aunt</option>
+                <option value="Elder Sibling">Elder Sibling</option>
+                <option value="Other">Other</option>
+              </select>
             </Field>
             <Field label="Guardian Phone" error={fieldError('guardian_phone')}>
               <input value={form.guardian_phone} onChange={(e) => set('guardian_phone', e.target.value)}

@@ -34,8 +34,11 @@ export default function StudentDetail() {
         gender: student.gender ?? '',
         address: student.address ?? '',
         blood_group: student.blood_group ?? '',
+        father_name: student.father_name ?? '',
+        mother_name: student.mother_name ?? '',
         guardian_name: student.guardian_name ?? '',
         guardian_phone: student.guardian_phone ?? '',
+        guardian_relation: student.guardian_relation ?? '',
       })
     }
   }, [student])
@@ -155,10 +158,24 @@ export default function StudentDetail() {
                     {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
+                <LabeledInput label="Father's Name" value={editForm.father_name}
+                  onChange={(v) => setEditForm({ ...editForm, father_name: v })} />
+                <LabeledInput label="Mother's Name" value={editForm.mother_name}
+                  onChange={(v) => setEditForm({ ...editForm, mother_name: v })} />
                 <LabeledInput label="Guardian Name" value={editForm.guardian_name}
                   onChange={(v) => setEditForm({ ...editForm, guardian_name: v })} />
                 <LabeledInput label="Guardian Phone" value={editForm.guardian_phone}
                   onChange={(v) => setEditForm({ ...editForm, guardian_phone: v })} />
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Relation to Student</label>
+                  <select value={editForm.guardian_relation} onChange={(e) => setEditForm({ ...editForm, guardian_relation: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select relation</option>
+                    {['Father','Mother','Grandfather','Grandmother','Uncle','Aunt','Elder Sibling','Other'].map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
                   <textarea rows={2} value={editForm.address}
@@ -183,8 +200,11 @@ export default function StudentDetail() {
               <InfoRow label="Gender" value={student.gender} className="capitalize" />
               <InfoRow label="Blood Group" value={student.blood_group} />
               <InfoRow label="Address" value={student.address} />
+              <InfoRow label="Father's Name" value={student.father_name} />
+              <InfoRow label="Mother's Name" value={student.mother_name} />
               <InfoRow label="Guardian" value={student.guardian_name} />
               <InfoRow label="Guardian Phone" value={student.guardian_phone} />
+              <InfoRow label="Guardian Relation" value={student.guardian_relation} />
             </div>
           )}
         </div>
