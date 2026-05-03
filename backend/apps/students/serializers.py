@@ -156,9 +156,9 @@ class StudentApplicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'first_name', 'last_name', 'email', 'phone',
             'date_of_birth', 'gender', 'address', 'blood_group',
-            'father_name', 'father_occupation', 'father_salary_range',
-            'mother_name', 'mother_occupation', 'mother_salary_range',
+            'father_name', 'mother_name',
             'guardian_name', 'guardian_phone', 'guardian_relation',
+            'guardian_occupation', 'guardian_salary_range',
             'status', 'rejection_reason', 'reviewed_at', 'created_at',
         ]
         read_only_fields = ['id', 'status', 'rejection_reason', 'reviewed_at', 'created_at']

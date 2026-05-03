@@ -85,6 +85,8 @@ def application_detail(request, pk):
             'guardian_name': application.guardian_name,
             'guardian_phone': application.guardian_phone,
             'guardian_relation': application.guardian_relation,
+            'guardian_occupation': application.guardian_occupation,
+            'guardian_salary_range': application.guardian_salary_range,
         }
 
         serializer = StudentCreateSerializer(data=student_data)

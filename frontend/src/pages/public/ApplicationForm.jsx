@@ -2,40 +2,32 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { submitApplication } from '@/api/applications'
 
-const SALARY_OPTIONS = [
-  { value: '₹0', label: '₹0 (No Income)' },
-  { value: 'Below ₹1L', label: 'Below ₹1L / year' },
-  { value: '₹1L–3L', label: '₹1L – 3L / year' },
-  { value: '₹3L–5L', label: '₹3L – 5L / year' },
-  { value: '₹5L–10L', label: '₹5L – 10L / year' },
-  { value: '₹10L–20L', label: '₹10L – 20L / year' },
-  { value: 'Above ₹20L', label: 'Above ₹20L / year' },
-]
-
 const EMPTY = {
   first_name: '', last_name: '', email: '', phone: '',
-  date_of_birth: '', gender: '', address: '', blood_group: '',
-  father_name: '', father_occupation: '', father_salary_range: '',
-  mother_name: '', mother_occupation: '', mother_salary_range: '',
-  guardian_name: '', guardian_phone: '', guardian_relation: '',
+  date_of_birth: '', gender: '',
+  blood_group: '', address: '',
+  father_name: '', mother_name: '',
+  guardian_name: '', guardian_relation: '', guardian_phone: '',
+  guardian_occupation: '', guardian_salary_range: '',
 }
 
-// page: 'form' | 'preview' | 'success'
+// step: 'form' | 'preview' | 'success'
 export default function ApplicationForm() {
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})
-  const [page, setPage] = useState('form')
+  const [step, setStep] = useState('form')
   const [showConfirm, setShowConfirm] = useState(false)
 
   const mutation = useMutation({
     mutationFn: submitApplication,
-    onSuccess: () => { setShowConfirm(false); setPage('success') },
+    onSuccess: () => { setShowConfirm(false); setStep('success') },
     onError: (e) => {
       setShowConfirm(false)
-      setPage('form')
+      setStep('form')
       const data = e.response?.data
       if (data && typeof data === 'object') setErrors(data)
       else setErrors({ non_field_errors: ['Something went wrong. Please try again.'] })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     },
   })
 
@@ -47,13 +39,14 @@ export default function ApplicationForm() {
   function handleFormSubmit(e) {
     e.preventDefault()
     setErrors({})
-    setPage('preview')
+    setStep('preview')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const fieldError = (f) => errors[f]?.[0] ?? errors[f]
+  const fe = (f) => errors[f]?.[0] ?? errors[f]
 
-  if (page === 'success') {
+  // ── Success ────────────────────────────────────────────────────────────────
+  if (step === 'success') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl border border-gray-200 p-10 max-w-md w-full text-center shadow-sm">
@@ -63,14 +56,16 @@ export default function ApplicationForm() {
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Application Submitted!</h2>
-          <p className="text-gray-600 text-sm leading-relaxed mb-1">
+          <p className="text-gray-500 text-sm leading-relaxed">
             Your application has been received successfully.
           </p>
-          <p className="text-blue-700 font-medium text-sm bg-blue-50 rounded-lg px-4 py-2 mt-3">
-            Please Contact Admin for Approval of your Form.
-          </p>
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3">
+            <p className="text-blue-700 font-medium text-sm">
+              Please Contact Admin for Approval of your Form.
+            </p>
+          </div>
           <button
-            onClick={() => { setForm(EMPTY); setErrors({}); setPage('form') }}
+            onClick={() => { setForm(EMPTY); setErrors({}); setStep('form') }}
             className="mt-6 px-5 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
           >
             Submit another application
@@ -80,51 +75,52 @@ export default function ApplicationForm() {
     )
   }
 
-  if (page === 'preview') {
+  // ── Preview ────────────────────────────────────────────────────────────────
+  if (step === 'preview') {
     return (
       <div className="min-h-screen bg-slate-50 py-10 px-4">
-        <PageHeader />
+        <Header />
 
         <div className="max-w-2xl mx-auto">
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 mb-5 flex items-center gap-2">
             <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-blue-700 font-medium">Please review your details before submitting.</p>
+            <p className="text-sm text-blue-700 font-medium">Review your details carefully before submitting.</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
-            <PreviewSection title="Student Information">
-              <PreviewRow label="Full Name" value={`${form.first_name} ${form.last_name}`} />
-              <PreviewRow label="Email" value={form.email} />
-              <PreviewRow label="Phone" value={form.phone} />
-              <PreviewRow label="Date of Birth" value={form.date_of_birth} />
-              <PreviewRow label="Gender" value={cap(form.gender)} />
-              <PreviewRow label="Blood Group" value={form.blood_group} />
-              <PreviewRow label="Address" value={form.address} />
-            </PreviewSection>
 
-            <PreviewSection title="Father's Information">
-              <PreviewRow label="Name" value={form.father_name} />
-              <PreviewRow label="Occupation" value={form.father_occupation} />
-              <PreviewRow label="Annual Salary" value={salaryLabel(form.father_salary_range)} />
-            </PreviewSection>
+            <PSection title="Account">
+              <PRow label="First Name"   value={form.first_name} />
+              <PRow label="Last Name"    value={form.last_name} />
+              <PRow label="Email"        value={form.email} />
+              <PRow label="Phone"        value={form.phone} />
+              <PRow label="Date of Birth" value={form.date_of_birth} />
+              <PRow label="Gender"       value={cap(form.gender)} />
+            </PSection>
 
-            <PreviewSection title="Mother's Information">
-              <PreviewRow label="Name" value={form.mother_name} />
-              <PreviewRow label="Occupation" value={form.mother_occupation} />
-              <PreviewRow label="Annual Salary" value={salaryLabel(form.mother_salary_range)} />
-            </PreviewSection>
+            <PSection title="Profile">
+              <PRow label="Blood Group" value={form.blood_group} />
+              <PRow label="Address"     value={form.address} />
+            </PSection>
 
-            <PreviewSection title="Guardian / Primary Contact">
-              <PreviewRow label="Guardian Name" value={form.guardian_name} />
-              <PreviewRow label="Relation" value={form.guardian_relation} />
-              <PreviewRow label="Phone" value={form.guardian_phone} />
-            </PreviewSection>
+            <PSection title="Parents">
+              <PRow label="Father's Name" value={form.father_name} />
+              <PRow label="Mother's Name" value={form.mother_name} />
+            </PSection>
+
+            <PSection title="Guardian">
+              <PRow label="Guardian Name"    value={form.guardian_name} />
+              <PRow label="Relation"         value={form.guardian_relation} />
+              <PRow label="Guardian Phone"   value={form.guardian_phone} />
+              <PRow label="Occupation"       value={form.guardian_occupation} />
+              <PRow label="Salary Range"     value={form.guardian_salary_range} />
+            </PSection>
 
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => { setPage('form'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                onClick={() => { setStep('form'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200"
               >
                 ← Edit Details
@@ -139,158 +135,107 @@ export default function ApplicationForm() {
           </div>
         </div>
 
-        {/* Confirm modal */}
         {showConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Are you sure?</h3>
-              <p className="text-sm text-gray-500 mb-5">
-                Once submitted, this application will be sent to the school admin for approval. Make sure all details are correct.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowConfirm(false)}
-                  disabled={mutation.isPending}
-                  className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
-                >
-                  Go Back
-                </button>
-                <button
-                  onClick={() => mutation.mutate(form)}
-                  disabled={mutation.isPending}
-                  className="flex-1 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {mutation.isPending ? 'Submitting…' : 'Yes, Submit'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ConfirmModal
+            isPending={mutation.isPending}
+            onCancel={() => setShowConfirm(false)}
+            onConfirm={() => mutation.mutate(form)}
+          />
         )}
       </div>
     )
   }
 
-  // page === 'form'
+  // ── Form ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
-      <PageHeader />
+      <Header />
 
       <form onSubmit={handleFormSubmit} className="max-w-2xl mx-auto bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
         {errors.non_field_errors && (
           <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{errors.non_field_errors[0]}</p>
         )}
 
-        {/* Student Information */}
+        {/* Account */}
         <section>
-          <SectionTitle>Student Information</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="First Name" error={fieldError('first_name')}>
+          <SectionTitle>Account</SectionTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="First Name" error={fe('first_name')}>
               <input required value={form.first_name} onChange={(e) => set('first_name', e.target.value)}
-                className={inp(fieldError('first_name'))} placeholder="e.g. Priya" />
+                className={inp(fe('first_name'))} placeholder="Jane" />
             </Field>
-            <Field label="Last Name" error={fieldError('last_name')}>
+            <Field label="Last Name" error={fe('last_name')}>
               <input required value={form.last_name} onChange={(e) => set('last_name', e.target.value)}
-                className={inp(fieldError('last_name'))} placeholder="e.g. Sharma" />
+                className={inp(fe('last_name'))} placeholder="Doe" />
             </Field>
-            <Field label="Email Address" error={fieldError('email')}>
+            <Field label="Email" error={fe('email')}>
               <input required type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
-                className={inp(fieldError('email'))} placeholder="student@example.com" />
+                className={inp(fe('email'))} placeholder="jane@school.com" />
             </Field>
-            <Field label="Phone Number" error={fieldError('phone')}>
+            <Field label="Phone" error={fe('phone')}>
               <input required value={form.phone} onChange={(e) => set('phone', e.target.value)}
-                className={inp(fieldError('phone'))} placeholder="+91 9876543210" />
+                className={inp(fe('phone'))} placeholder="+91 9876543210" />
             </Field>
-            <Field label="Date of Birth" error={fieldError('date_of_birth')}>
+            <Field label="Date of Birth" error={fe('date_of_birth')}>
               <input required type="date" value={form.date_of_birth} onChange={(e) => set('date_of_birth', e.target.value)}
-                className={inp(fieldError('date_of_birth'))} />
+                className={inp(fe('date_of_birth'))} />
             </Field>
-            <Field label="Gender" error={fieldError('gender')}>
-              <select required value={form.gender} onChange={(e) => set('gender', e.target.value)} className={inp(fieldError('gender'))}>
-                <option value="">Select gender</option>
+            <Field label="Gender" error={fe('gender')}>
+              <select required value={form.gender} onChange={(e) => set('gender', e.target.value)} className={inp(fe('gender'))}>
+                <option value="">Select</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
                 <option value="other">Other</option>
               </select>
             </Field>
-            <Field label="Blood Group" error={fieldError('blood_group')}>
-              <select required value={form.blood_group} onChange={(e) => set('blood_group', e.target.value)} className={inp(fieldError('blood_group'))}>
-                <option value="">Select blood group</option>
+          </div>
+        </section>
+
+        {/* Profile */}
+        <section>
+          <SectionTitle>Profile</SectionTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Blood Group" error={fe('blood_group')}>
+              <select required value={form.blood_group} onChange={(e) => set('blood_group', e.target.value)} className={inp(fe('blood_group'))}>
+                <option value="">Select</option>
                 {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((b) => (
                   <option key={b} value={b}>{b}</option>
                 ))}
               </select>
             </Field>
-            <Field label="Home Address" error={fieldError('address')} className="sm:col-span-2">
+            <Field label="Address" error={fe('address')} className="col-span-2">
               <textarea required rows={2} value={form.address} onChange={(e) => set('address', e.target.value)}
-                className={inp(fieldError('address'))} placeholder="Full home address" />
+                className={inp(fe('address'))} placeholder="Home address" />
             </Field>
           </div>
         </section>
 
-        {/* Father */}
+        {/* Parents */}
         <section>
-          <SectionTitle>Father's Information</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Father's Full Name" error={fieldError('father_name')}>
+          <SectionTitle>Parents</SectionTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Father's Name" error={fe('father_name')}>
               <input required value={form.father_name} onChange={(e) => set('father_name', e.target.value)}
-                className={inp(fieldError('father_name'))} placeholder="Father's full name" />
+                className={inp(fe('father_name'))} placeholder="Father's full name" />
             </Field>
-            <Field label="Occupation" error={fieldError('father_occupation')}>
-              <input required value={form.father_occupation} onChange={(e) => set('father_occupation', e.target.value)}
-                className={inp(fieldError('father_occupation'))} placeholder="e.g. Engineer, Farmer" />
-            </Field>
-            <Field label="Annual Salary Range" error={fieldError('father_salary_range')} className="sm:col-span-2">
-              <select required value={form.father_salary_range} onChange={(e) => set('father_salary_range', e.target.value)}
-                className={inp(fieldError('father_salary_range'))}>
-                <option value="">Select salary range</option>
-                {SALARY_OPTIONS.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-        </section>
-
-        {/* Mother */}
-        <section>
-          <SectionTitle>Mother's Information</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Mother's Full Name" error={fieldError('mother_name')}>
+            <Field label="Mother's Name" error={fe('mother_name')}>
               <input required value={form.mother_name} onChange={(e) => set('mother_name', e.target.value)}
-                className={inp(fieldError('mother_name'))} placeholder="Mother's full name" />
-            </Field>
-            <Field label="Occupation" error={fieldError('mother_occupation')}>
-              <input required value={form.mother_occupation} onChange={(e) => set('mother_occupation', e.target.value)}
-                className={inp(fieldError('mother_occupation'))} placeholder="e.g. Teacher, Homemaker" />
-            </Field>
-            <Field label="Annual Salary Range" error={fieldError('mother_salary_range')} className="sm:col-span-2">
-              <select required value={form.mother_salary_range} onChange={(e) => set('mother_salary_range', e.target.value)}
-                className={inp(fieldError('mother_salary_range'))}>
-                <option value="">Select salary range</option>
-                {SALARY_OPTIONS.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                className={inp(fe('mother_name'))} placeholder="Mother's full name" />
             </Field>
           </div>
         </section>
 
         {/* Guardian */}
         <section>
-          <SectionTitle>Guardian / Primary Contact</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Guardian Name" error={fieldError('guardian_name')}>
+          <SectionTitle>Guardian</SectionTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Guardian Name" error={fe('guardian_name')}>
               <input required value={form.guardian_name} onChange={(e) => set('guardian_name', e.target.value)}
-                className={inp(fieldError('guardian_name'))} placeholder="Guardian full name" />
+                className={inp(fe('guardian_name'))} placeholder="Guardian full name" />
             </Field>
-            <Field label="Relation to Student" error={fieldError('guardian_relation')}>
+            <Field label="Relation to Student" error={fe('guardian_relation')}>
               <select required value={form.guardian_relation} onChange={(e) => set('guardian_relation', e.target.value)}
-                className={inp(fieldError('guardian_relation'))}>
+                className={inp(fe('guardian_relation'))}>
                 <option value="">Select relation</option>
                 <option value="Father">Father</option>
                 <option value="Mother">Mother</option>
@@ -302,32 +247,46 @@ export default function ApplicationForm() {
                 <option value="Other">Other</option>
               </select>
             </Field>
-            <Field label="Guardian Phone" error={fieldError('guardian_phone')} className="sm:col-span-2">
+            <Field label="Guardian Phone" error={fe('guardian_phone')}>
               <input required value={form.guardian_phone} onChange={(e) => set('guardian_phone', e.target.value)}
-                className={inp(fieldError('guardian_phone'))} placeholder="+91 9876543210" />
+                className={inp(fe('guardian_phone'))} placeholder="+91 9876543210" />
+            </Field>
+            <Field label="Occupation" error={fe('guardian_occupation')}>
+              <input required value={form.guardian_occupation} onChange={(e) => set('guardian_occupation', e.target.value)}
+                className={inp(fe('guardian_occupation'))} placeholder="e.g. Teacher, Engineer" />
+            </Field>
+            <Field label="Salary Range" error={fe('guardian_salary_range')}>
+              <select required value={form.guardian_salary_range} onChange={(e) => set('guardian_salary_range', e.target.value)}
+                className={inp(fe('guardian_salary_range'))}>
+                <option value="">Select range</option>
+                <option value="₹0">₹0 (No Income)</option>
+                <option value="Below ₹1L">Below ₹1L / year</option>
+                <option value="₹1L–3L">₹1L – 3L / year</option>
+                <option value="₹3L–5L">₹3L – 5L / year</option>
+                <option value="₹5L–10L">₹5L – 10L / year</option>
+                <option value="₹10L–20L">₹10L – 20L / year</option>
+                <option value="Above ₹20L">Above ₹20L / year</option>
+              </select>
             </Field>
           </div>
         </section>
 
-        <div className="pt-2">
+        <div className="flex justify-end gap-2 pt-2">
           <button
             type="submit"
-            className="w-full py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Preview Application →
+            Preview & Submit →
           </button>
-          <p className="text-center text-xs text-gray-400 mt-3">
-            All fields are required. Your information will only be used for admission purposes.
-          </p>
         </div>
       </form>
     </div>
   )
 }
 
-// ── Shared components ──────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
-function PageHeader() {
+function Header() {
   return (
     <div className="max-w-2xl mx-auto mb-8 text-center">
       <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -335,7 +294,7 @@ function PageHeader() {
       </div>
       <h1 className="text-2xl font-bold text-gray-900">Student Admission Application</h1>
       <p className="text-gray-500 text-sm mt-1">
-        Fill in the details below. The school admin will review and approve your form.
+        All fields are required. The school admin will review and approve your form.
       </p>
     </div>
   )
@@ -348,9 +307,7 @@ function SectionTitle({ children }) {
 function Field({ label, error, children, className = '' }) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} <span className="text-red-500">*</span>
-      </label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {children}
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
@@ -363,7 +320,7 @@ function inp(hasError) {
   }`
 }
 
-function PreviewSection({ title, children }) {
+function PSection({ title, children }) {
   return (
     <section>
       <h3 className="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">{title}</h3>
@@ -372,15 +329,49 @@ function PreviewSection({ title, children }) {
   )
 }
 
-function PreviewRow({ label, value }) {
+function PRow({ label, value }) {
   return (
     <div className="flex gap-3 text-sm">
-      <span className="text-gray-400 w-32 shrink-0">{label}</span>
-      <span className="text-gray-800 font-medium flex-1">{value || <span className="text-gray-300 font-normal italic">—</span>}</span>
+      <span className="text-gray-400 w-36 shrink-0">{label}</span>
+      <span className="text-gray-800 font-medium flex-1 break-words">
+        {value || <span className="text-gray-300 font-normal italic">—</span>}
+      </span>
+    </div>
+  )
+}
+
+function ConfirmModal({ isPending, onCancel, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl text-center">
+        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1">Are you sure?</h3>
+        <p className="text-sm text-gray-500 mb-5">
+          Please confirm that all the details you have entered are correct before submitting.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isPending}
+            className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+          >
+            Go Back
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isPending}
+            className="flex-1 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Submitting…' : 'Yes, Submit'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
 
 const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
-
-const salaryLabel = (val) => SALARY_OPTIONS.find((o) => o.value === val)?.label ?? val
