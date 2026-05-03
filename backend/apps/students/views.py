@@ -81,12 +81,14 @@ def application_detail(request, pk):
             'address': application.address,
             'blood_group': application.blood_group,
             'father_name': application.father_name,
+            'father_occupation': application.father_occupation,
+            'father_salary_range': application.father_salary_range,
             'mother_name': application.mother_name,
+            'mother_occupation': application.mother_occupation,
+            'mother_salary_range': application.mother_salary_range,
             'guardian_name': application.guardian_name,
             'guardian_phone': application.guardian_phone,
             'guardian_relation': application.guardian_relation,
-            'guardian_occupation': application.guardian_occupation,
-            'guardian_salary_range': application.guardian_salary_range,
         }
 
         serializer = StudentCreateSerializer(data=student_data)

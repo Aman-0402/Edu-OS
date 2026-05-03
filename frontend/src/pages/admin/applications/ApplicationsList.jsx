@@ -132,11 +132,13 @@ export default function ApplicationsList() {
               {selected.blood_group && <Row label="Blood Group" value={selected.blood_group} />}
               {selected.address && <Row label="Address" value={selected.address} />}
               {selected.father_name && <Row label="Father" value={selected.father_name} />}
+              {selected.father_occupation && <Row label="Father's Job" value={selected.father_occupation} />}
+              {selected.father_salary_range && <Row label="Father's Salary" value={selected.father_salary_range} />}
               {selected.mother_name && <Row label="Mother" value={selected.mother_name} />}
+              {selected.mother_occupation && <Row label="Mother's Job" value={selected.mother_occupation} />}
+              {selected.mother_salary_range && <Row label="Mother's Salary" value={selected.mother_salary_range} />}
               {selected.guardian_name && <Row label="Guardian" value={`${selected.guardian_name} (${selected.guardian_relation || '—'})`} />}
               {selected.guardian_phone && <Row label="Guardian Phone" value={selected.guardian_phone} />}
-              {selected.guardian_occupation && <Row label="Occupation" value={selected.guardian_occupation} />}
-              {selected.guardian_salary_range && <Row label="Salary Range" value={selected.guardian_salary_range} />}
               {selected.rejection_reason && (
                 <Row label="Rejection Reason" value={selected.rejection_reason} valueClass="text-red-600" />
               )}

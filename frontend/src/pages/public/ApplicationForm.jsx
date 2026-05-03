@@ -6,10 +6,20 @@ const EMPTY = {
   first_name: '', last_name: '', email: '', phone: '',
   date_of_birth: '', gender: '',
   blood_group: '', address: '',
-  father_name: '', mother_name: '',
+  father_name: '', father_occupation: '', father_salary_range: '',
+  mother_name: '', mother_occupation: '', mother_salary_range: '',
   guardian_name: '', guardian_relation: '', guardian_phone: '',
-  guardian_occupation: '', guardian_salary_range: '',
 }
+
+const SALARY_OPTIONS = [
+  { value: '₹0',        label: '₹0 (No Income)' },
+  { value: 'Below ₹1L', label: 'Below ₹1L / year' },
+  { value: '₹1L–3L',   label: '₹1L – 3L / year' },
+  { value: '₹3L–5L',   label: '₹3L – 5L / year' },
+  { value: '₹5L–10L',  label: '₹5L – 10L / year' },
+  { value: '₹10L–20L', label: '₹10L – 20L / year' },
+  { value: 'Above ₹20L', label: 'Above ₹20L / year' },
+]
 
 // step: 'form' | 'preview' | 'success'
 export default function ApplicationForm() {
@@ -106,16 +116,18 @@ export default function ApplicationForm() {
             </PSection>
 
             <PSection title="Parents">
-              <PRow label="Father's Name" value={form.father_name} />
-              <PRow label="Mother's Name" value={form.mother_name} />
+              <PRow label="Father's Name"       value={form.father_name} />
+              <PRow label="Father's Occupation" value={form.father_occupation} />
+              <PRow label="Father's Salary"     value={form.father_salary_range} />
+              <PRow label="Mother's Name"       value={form.mother_name} />
+              <PRow label="Mother's Occupation" value={form.mother_occupation} />
+              <PRow label="Mother's Salary"     value={form.mother_salary_range} />
             </PSection>
 
             <PSection title="Guardian">
-              <PRow label="Guardian Name"    value={form.guardian_name} />
-              <PRow label="Relation"         value={form.guardian_relation} />
-              <PRow label="Guardian Phone"   value={form.guardian_phone} />
-              <PRow label="Occupation"       value={form.guardian_occupation} />
-              <PRow label="Salary Range"     value={form.guardian_salary_range} />
+              <PRow label="Guardian Name"  value={form.guardian_name} />
+              <PRow label="Relation"       value={form.guardian_relation} />
+              <PRow label="Guardian Phone" value={form.guardian_phone} />
             </PSection>
 
             <div className="flex gap-3 pt-2">
@@ -218,9 +230,36 @@ export default function ApplicationForm() {
               <input required value={form.father_name} onChange={(e) => set('father_name', e.target.value)}
                 className={inp(fe('father_name'))} placeholder="Father's full name" />
             </Field>
+            <Field label="Father's Occupation" error={fe('father_occupation')}>
+              <input required value={form.father_occupation} onChange={(e) => set('father_occupation', e.target.value)}
+                className={inp(fe('father_occupation'))} placeholder="e.g. Engineer, Farmer" />
+            </Field>
+            <Field label="Father's Salary Range" error={fe('father_salary_range')} className="col-span-2">
+              <select required value={form.father_salary_range} onChange={(e) => set('father_salary_range', e.target.value)}
+                className={inp(fe('father_salary_range'))}>
+                <option value="">Select range</option>
+                {SALARY_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </Field>
+
             <Field label="Mother's Name" error={fe('mother_name')}>
               <input required value={form.mother_name} onChange={(e) => set('mother_name', e.target.value)}
                 className={inp(fe('mother_name'))} placeholder="Mother's full name" />
+            </Field>
+            <Field label="Mother's Occupation" error={fe('mother_occupation')}>
+              <input required value={form.mother_occupation} onChange={(e) => set('mother_occupation', e.target.value)}
+                className={inp(fe('mother_occupation'))} placeholder="e.g. Teacher, Homemaker" />
+            </Field>
+            <Field label="Mother's Salary Range" error={fe('mother_salary_range')} className="col-span-2">
+              <select required value={form.mother_salary_range} onChange={(e) => set('mother_salary_range', e.target.value)}
+                className={inp(fe('mother_salary_range'))}>
+                <option value="">Select range</option>
+                {SALARY_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </Field>
           </div>
         </section>
@@ -247,26 +286,9 @@ export default function ApplicationForm() {
                 <option value="Other">Other</option>
               </select>
             </Field>
-            <Field label="Guardian Phone" error={fe('guardian_phone')}>
+            <Field label="Guardian Phone" error={fe('guardian_phone')} className="col-span-2">
               <input required value={form.guardian_phone} onChange={(e) => set('guardian_phone', e.target.value)}
                 className={inp(fe('guardian_phone'))} placeholder="+91 9876543210" />
-            </Field>
-            <Field label="Occupation" error={fe('guardian_occupation')}>
-              <input required value={form.guardian_occupation} onChange={(e) => set('guardian_occupation', e.target.value)}
-                className={inp(fe('guardian_occupation'))} placeholder="e.g. Teacher, Engineer" />
-            </Field>
-            <Field label="Salary Range" error={fe('guardian_salary_range')}>
-              <select required value={form.guardian_salary_range} onChange={(e) => set('guardian_salary_range', e.target.value)}
-                className={inp(fe('guardian_salary_range'))}>
-                <option value="">Select range</option>
-                <option value="₹0">₹0 (No Income)</option>
-                <option value="Below ₹1L">Below ₹1L / year</option>
-                <option value="₹1L–3L">₹1L – 3L / year</option>
-                <option value="₹3L–5L">₹3L – 5L / year</option>
-                <option value="₹5L–10L">₹5L – 10L / year</option>
-                <option value="₹10L–20L">₹10L – 20L / year</option>
-                <option value="Above ₹20L">Above ₹20L / year</option>
-              </select>
             </Field>
           </div>
         </section>

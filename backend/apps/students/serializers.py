@@ -30,9 +30,9 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'email', 'first_name', 'last_name', 'full_name', 'phone',
             'admission_number', 'date_of_birth', 'gender', 'address',
             'photo', 'blood_group',
-            'father_name', 'mother_name',
+            'father_name', 'father_occupation', 'father_salary_range',
+            'mother_name', 'mother_occupation', 'mother_salary_range',
             'guardian_name', 'guardian_phone', 'guardian_relation',
-            'guardian_occupation', 'guardian_salary_range',
             'is_active', 'created_at',
         ]
         read_only_fields = ['id', 'admission_number', 'created_at']
@@ -52,12 +52,14 @@ class StudentCreateSerializer(serializers.Serializer):
     address = serializers.CharField(required=False, allow_blank=True)
     blood_group = serializers.CharField(max_length=5, required=False, allow_blank=True)
     father_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    father_occupation = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    father_salary_range = serializers.CharField(max_length=50, required=False, allow_blank=True)
     mother_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    mother_occupation = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    mother_salary_range = serializers.CharField(max_length=50, required=False, allow_blank=True)
     guardian_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     guardian_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     guardian_relation = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    guardian_occupation = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    guardian_salary_range = serializers.CharField(max_length=50, required=False, allow_blank=True)
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -92,9 +94,11 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'first_name', 'last_name', 'phone',
             'date_of_birth', 'gender', 'address',
-            'blood_group', 'father_name', 'mother_name',
+            'blood_group',
+            'father_name', 'father_occupation', 'father_salary_range',
+            'mother_name', 'mother_occupation', 'mother_salary_range',
             'guardian_name', 'guardian_phone', 'guardian_relation',
-            'guardian_occupation', 'guardian_salary_range', 'is_active',
+            'is_active',
         ]
 
     def update(self, instance, validated_data):
@@ -156,9 +160,9 @@ class StudentApplicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'first_name', 'last_name', 'email', 'phone',
             'date_of_birth', 'gender', 'address', 'blood_group',
-            'father_name', 'mother_name',
+            'father_name', 'father_occupation', 'father_salary_range',
+            'mother_name', 'mother_occupation', 'mother_salary_range',
             'guardian_name', 'guardian_phone', 'guardian_relation',
-            'guardian_occupation', 'guardian_salary_range',
             'status', 'rejection_reason', 'reviewed_at', 'created_at',
         ]
         read_only_fields = ['id', 'status', 'rejection_reason', 'reviewed_at', 'created_at']
