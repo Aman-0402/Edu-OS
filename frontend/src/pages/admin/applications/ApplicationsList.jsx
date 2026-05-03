@@ -50,6 +50,12 @@ export default function ApplicationsList() {
 
   const applications = data?.results ?? data ?? []
 
+  function closeDetail() {
+    setSelected(null)
+    setShowRejectModal(false)
+    setRejectReason('')
+  }
+
   return (
     <div>
       <PageHeader
@@ -74,128 +80,152 @@ export default function ApplicationsList() {
         ))}
       </div>
 
-      <div className="flex gap-4">
-        {/* List */}
-        <div className="flex-1 min-w-0">
-          {isLoading ? (
-            <p className="text-sm text-gray-400 py-8 text-center">Loading…</p>
-          ) : applications.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 py-16 text-center">
-              <p className="text-gray-400 text-sm">No {activeTab} applications</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-              {applications.map((app) => (
-                <button
-                  key={app.id}
-                  onClick={() => setSelected(app)}
-                  className={`w-full text-left px-5 py-4 hover:bg-slate-50 transition-colors ${
-                    selected?.id === app.id ? 'bg-blue-50' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">
-                        {app.first_name} {app.last_name}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">{app.email}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <StatusBadge status={app.status} />
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(app.created_at).toLocaleDateString('en-IN', {
-                          day: 'numeric', month: 'short', year: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+      {/* List */}
+      {isLoading ? (
+        <p className="text-sm text-gray-400 py-8 text-center">Loading…</p>
+      ) : applications.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 py-16 text-center">
+          <p className="text-gray-400 text-sm">No {activeTab} applications</p>
         </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+          {applications.map((app) => (
+            <button
+              key={app.id}
+              onClick={() => setSelected(app)}
+              className="w-full text-left px-5 py-4 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
+                    {app.first_name} {app.last_name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">{app.email}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <StatusBadge status={app.status} />
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(app.created_at).toLocaleDateString('en-IN', {
+                      day: 'numeric', month: 'short', year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
-        {/* Detail panel */}
-        {selected && (
-          <div className="w-80 shrink-0 bg-white rounded-xl border border-gray-200 p-5 self-start sticky top-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 text-sm">Application Detail</h3>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+      {/* Detail modal */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) closeDetail() }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+              <div>
+                <h2 className="font-semibold text-gray-900">
+                  {selected.first_name} {selected.last_name}
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">{selected.email}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge status={selected.status} />
+                <button
+                  onClick={closeDetail}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none p-1"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3 text-sm">
-              <Row label="Name" value={`${selected.first_name} ${selected.last_name}`} />
-              <Row label="Email" value={selected.email} />
-              {selected.phone && <Row label="Phone" value={selected.phone} />}
-              {selected.date_of_birth && <Row label="Date of Birth" value={selected.date_of_birth} />}
-              {selected.gender && <Row label="Gender" value={cap(selected.gender)} />}
-              {selected.blood_group && <Row label="Blood Group" value={selected.blood_group} />}
-              {selected.address && <Row label="Address" value={selected.address} />}
-              {selected.father_name && <Row label="Father" value={selected.father_name} />}
-              {selected.father_occupation && <Row label="Father's Job" value={selected.father_occupation} />}
-              {selected.father_salary_range && <Row label="Father's Salary" value={selected.father_salary_range} />}
-              {selected.mother_name && <Row label="Mother" value={selected.mother_name} />}
-              {selected.mother_occupation && <Row label="Mother's Job" value={selected.mother_occupation} />}
-              {selected.mother_salary_range && <Row label="Mother's Salary" value={selected.mother_salary_range} />}
-              {selected.guardian_name && <Row label="Guardian" value={`${selected.guardian_name} (${selected.guardian_relation || '—'})`} />}
-              {selected.guardian_phone && <Row label="Guardian Phone" value={selected.guardian_phone} />}
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+              <Section title="Account">
+                <Row label="Full Name"    value={`${selected.first_name} ${selected.last_name}`} />
+                <Row label="Email"        value={selected.email} />
+                <Row label="Phone"        value={selected.phone} />
+                <Row label="Date of Birth" value={selected.date_of_birth} />
+                <Row label="Gender"       value={cap(selected.gender)} />
+                <Row label="Blood Group"  value={selected.blood_group} />
+                <Row label="Address"      value={selected.address} />
+              </Section>
+
+              <Section title="Parents">
+                <Row label="Father's Name"       value={selected.father_name} />
+                <Row label="Father's Occupation" value={selected.father_occupation} />
+                <Row label="Father's Salary"     value={selected.father_salary_range} />
+                <Row label="Mother's Name"       value={selected.mother_name} />
+                <Row label="Mother's Occupation" value={selected.mother_occupation} />
+                <Row label="Mother's Salary"     value={selected.mother_salary_range} />
+              </Section>
+
+              <Section title="Guardian">
+                <Row label="Guardian Name"  value={selected.guardian_name} />
+                <Row label="Relation"       value={selected.guardian_relation} />
+                <Row label="Guardian Phone" value={selected.guardian_phone} />
+              </Section>
+
               {selected.rejection_reason && (
-                <Row label="Rejection Reason" value={selected.rejection_reason} valueClass="text-red-600" />
+                <Section title="Rejection">
+                  <Row label="Reason" value={selected.rejection_reason} valueClass="text-red-600" />
+                </Section>
               )}
             </div>
 
-            {selected.status === 'pending' && (
-              <div className="flex gap-2 mt-5">
+            {/* Footer actions */}
+            {selected.status === 'pending' && !showRejectModal && (
+              <div className="px-6 py-4 border-t border-gray-100 flex gap-3 shrink-0">
                 <button
                   onClick={() => approveMut.mutate(selected.id)}
                   disabled={approveMut.isPending || rejectMut.isPending}
-                  className="flex-1 py-2 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  className="flex-1 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 disabled:opacity-50"
                 >
                   {approveMut.isPending ? 'Approving…' : 'Approve'}
                 </button>
                 <button
                   onClick={() => setShowRejectModal(true)}
                   disabled={approveMut.isPending || rejectMut.isPending}
-                  className="flex-1 py-2 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50"
+                  className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50"
                 >
                   Reject
                 </button>
               </div>
             )}
-          </div>
-        )}
-      </div>
 
-      {/* Reject modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-gray-900 mb-1">Reject Application</h3>
-            <p className="text-xs text-gray-500 mb-4">
-              Optionally provide a reason (visible to admin records only).
-            </p>
-            <textarea
-              rows={3}
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Reason for rejection…"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mb-4"
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => { setShowRejectModal(false); setRejectReason('') }}
-                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => rejectMut.mutate({ id: selected.id, reason: rejectReason })}
-                disabled={rejectMut.isPending}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50"
-              >
-                {rejectMut.isPending ? 'Rejecting…' : 'Confirm Reject'}
-              </button>
-            </div>
+            {/* Inline reject form inside modal */}
+            {selected.status === 'pending' && showRejectModal && (
+              <div className="px-6 py-4 border-t border-gray-100 shrink-0">
+                <p className="text-sm font-medium text-gray-700 mb-2">Reason for rejection <span className="text-gray-400 font-normal">(optional)</span></p>
+                <textarea
+                  rows={3}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="e.g. Incomplete documents, already enrolled…"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mb-3"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowRejectModal(false); setRejectReason('') }}
+                    className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => rejectMut.mutate({ id: selected.id, reason: rejectReason })}
+                    disabled={rejectMut.isPending}
+                    className="flex-1 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {rejectMut.isPending ? 'Rejecting…' : 'Confirm Reject'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -203,11 +233,22 @@ export default function ApplicationsList() {
   )
 }
 
-function Row({ label, value, valueClass = 'text-gray-700' }) {
+function Section({ title, children }) {
   return (
-    <div className="flex gap-2">
-      <span className="text-gray-400 w-28 shrink-0">{label}</span>
-      <span className={`flex-1 min-w-0 break-words ${valueClass}`}>{value || '—'}</span>
+    <div>
+      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{title}</h4>
+      <div className="space-y-2">{children}</div>
+    </div>
+  )
+}
+
+function Row({ label, value, valueClass = 'text-gray-800' }) {
+  return (
+    <div className="flex gap-3 text-sm">
+      <span className="text-gray-400 w-36 shrink-0">{label}</span>
+      <span className={`flex-1 min-w-0 break-words font-medium ${valueClass}`}>
+        {value || <span className="text-gray-300 font-normal">—</span>}
+      </span>
     </div>
   )
 }
