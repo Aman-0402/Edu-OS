@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   IconDashboard, IconStudents, IconTeachers, IconAttendance,
   IconFees, IconReports, IconParents, IconAcademics,
-  IconChevronDown, IconSignOut, IconClose,
+  IconChevronDown, IconSignOut, IconClose, IconApplications,
 } from '@/components/ui/Icons'
 
 const NAV = [
@@ -33,6 +33,7 @@ const NAV = [
     ],
   },
   { to: '/admin/parents', label: 'Parents', Icon: IconParents },
+  { to: '/admin/applications', label: 'Applications', Icon: IconApplications },
   { to: '/admin/reports', label: 'Reports', Icon: IconReports },
 ]
 

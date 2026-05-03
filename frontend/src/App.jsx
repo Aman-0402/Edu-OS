@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ProtectedRoute, RoleRoute } from '@/components/ui/ProtectedRoute'
 
 import LoginPage from '@/pages/auth/LoginPage'
+import ApplicationForm from '@/pages/public/ApplicationForm'
 
 import AdminLayout from '@/components/layouts/AdminLayout'
 import TeacherLayout from '@/components/layouts/TeacherLayout'
@@ -34,6 +35,7 @@ import FeeSetup from '@/pages/admin/fees/FeeSetup'
 import FeeCollection from '@/pages/admin/fees/FeeCollection'
 import ParentsPage from '@/pages/admin/parents/ParentsPage'
 import Reports from '@/pages/admin/Reports'
+import ApplicationsList from '@/pages/admin/applications/ApplicationsList'
 
 function RootRedirect() {
   const { user, isLoading } = useAuth()
@@ -54,6 +56,7 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/apply" element={<ApplicationForm />} />
         <Route path="/" element={<RootRedirect />} />
 
         {/* Admin */}
@@ -91,6 +94,7 @@ export default function App() {
 
           <Route path="parents" element={<ParentsPage />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="applications" element={<ApplicationsList />} />
         </Route>
 
         {/* Teacher */}

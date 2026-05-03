@@ -1,18 +1,117 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from utils.permissions import IsAdmin, IsAdminOrTeacher, IsStudent
 from utils.pagination import StandardResultsPagination
-from .models import StudentProfile, Enrollment
+from .models import StudentProfile, Enrollment, StudentApplication
 from .serializers import (
     StudentProfileSerializer,
     StudentCreateSerializer,
     StudentUpdateSerializer,
     EnrollmentSerializer,
+    StudentApplicationSerializer,
 )
+
+
+# ── Student Applications (public + admin) ─────────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def submit_application(request):
+    serializer = StudentApplicationSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'message': 'Application submitted successfully. The school will contact you soon.'},
+            status=status.HTTP_201_CREATED,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdmin])
+def application_list(request):
+    status_filter = request.query_params.get('status', 'pending')
+    qs = StudentApplication.objects.filter(status=status_filter)
+    paginator = StandardResultsPagination()
+    page = paginator.paginate_queryset(qs, request)
+    if page is not None:
+        return paginator.get_paginated_response(StudentApplicationSerializer(page, many=True).data)
+    return Response(StudentApplicationSerializer(qs, many=True).data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdmin])
+def application_detail(request, pk):
+    try:
+        application = StudentApplication.objects.get(pk=pk)
+    except StudentApplication.DoesNotExist:
+        return Response({'error': 'Application not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        return Response(StudentApplicationSerializer(application).data)
+
+    action = request.data.get('action')
+
+    if action == 'approve':
+        if application.status != StudentApplication.Status.PENDING:
+            return Response({'error': 'Only pending applications can be approved.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Build password: first 4 chars of name + ddmmyyyy from DOB
+        name_part = application.first_name.strip()[:4]
+        dob = application.date_of_birth
+        if dob:
+            password = f"{name_part}{dob.strftime('%d%m%Y')}"
+        else:
+            import secrets, string
+            password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(10))
+
+        student_data = {
+            'email': application.email,
+            'first_name': application.first_name,
+            'last_name': application.last_name,
+            'phone': application.phone,
+            'password': password,
+            'date_of_birth': application.date_of_birth,
+            'gender': application.gender,
+            'address': application.address,
+            'blood_group': application.blood_group,
+            'father_name': application.father_name,
+            'mother_name': application.mother_name,
+            'guardian_name': application.guardian_name,
+            'guardian_phone': application.guardian_phone,
+            'guardian_relation': application.guardian_relation,
+        }
+
+        serializer = StudentCreateSerializer(data=student_data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            profile = serializer.save()
+            application.status = StudentApplication.Status.APPROVED
+            application.reviewed_at = timezone.now()
+            application.save(update_fields=['status', 'reviewed_at'])
+
+        return Response({
+            'message': 'Application approved. Student account created.',
+            'student': StudentProfileSerializer(profile).data,
+        }, status=status.HTTP_201_CREATED)
+
+    if action == 'reject':
+        if application.status != StudentApplication.Status.PENDING:
+            return Response({'error': 'Only pending applications can be rejected.'}, status=status.HTTP_400_BAD_REQUEST)
+        application.status = StudentApplication.Status.REJECTED
+        application.rejection_reason = request.data.get('rejection_reason', '')
+        application.reviewed_at = timezone.now()
+        application.save(update_fields=['status', 'rejection_reason', 'reviewed_at'])
+        return Response({'message': 'Application rejected.'})
+
+    return Response({'error': 'Invalid action. Use "approve" or "reject".'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ── Students ──────────────────────────────────────────────────────────────────

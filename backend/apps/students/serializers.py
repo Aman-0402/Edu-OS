@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.academics.models import Section, AcademicYear
-from .models import StudentProfile, Enrollment
+from .models import StudentProfile, Enrollment, StudentApplication
 
 
 class StudentUserSerializer(serializers.ModelSerializer):
@@ -146,6 +146,22 @@ class EnrollmentSerializer(serializers.ModelSerializer):
                 'This student is already enrolled for the selected academic year.'
             )
         return attrs
+
+
+# ── Student Applications ──────────────────────────────────────────────────────
+
+class StudentApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentApplication
+        fields = [
+            'id', 'first_name', 'last_name', 'email', 'phone',
+            'date_of_birth', 'gender', 'address', 'blood_group',
+            'father_name', 'father_occupation', 'father_salary_range',
+            'mother_name', 'mother_occupation', 'mother_salary_range',
+            'guardian_name', 'guardian_phone', 'guardian_relation',
+            'status', 'rejection_reason', 'reviewed_at', 'created_at',
+        ]
+        read_only_fields = ['id', 'status', 'rejection_reason', 'reviewed_at', 'created_at']
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
